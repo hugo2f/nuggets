@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <strings.h>
 #include "message.h"
+#include "graphics.h"
 
 typedef bool (*InputHandler)(void* arg);
 
@@ -102,18 +103,18 @@ handleMessage(void* arg, const addr_t from, const char* message)
     sscanf(message, "%s %99[^\n]", messageType, remainder);
 
     if (strcmp(messageType, "OK") == 0) {
-        handleOkay(remainder);
+        // handleOkay(remainder);
     } else if (strcmp(messageType, "GRID") == 0) {
-        handleGrid(remainder);
+        // handleGrid(remainder);
     } else if (strcmp(messageType, "GOLD") == 0) {
-        handleGold(remainder);
+        // handleGold(remainder);
     } else if (strcmp(messageType, "DISPLAY") == 0) {
-        handleDisplay(remainder);
+        // handleDisplay(remainder);
     } else if (strcmp(messageType, "QUIT") == 0) {
-        handleQuit(remainder);
+        // handleQuit(remainder);
         return true;
     } else if (strcmp(messageType, "ERROR") == 0) {
-        handleError(remainder);
+        // handleError(remainder);
     } else {
         fprintf(stderr, "%s is an invalid messageType", messageType);
     }
