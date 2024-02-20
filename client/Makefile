@@ -8,10 +8,11 @@ LLIBS = $S/support.a
 CFLAGS = -Wall -pedantic -std=c11 -ggdb $(LOGGING) $(MEMTEST) -I$S $(FLAGS) 
 CC = gcc
 
-client: client.o $(LLIBS)
+client: client.o graphics.o $(LLIBS)
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
-client.o: $S/message.h
+client.o: graphics.h $S/message.h
+graphics.o: graphics.h
 
 test: client
 	bash -v ./testing.sh
