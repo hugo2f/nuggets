@@ -7,4 +7,6 @@ static void display_banner(const char* playerName, int playerNuggets, int unclai
 
 static void display_board(char* board, int nrows, int ncols);
 
+static void exit_curses(void);
+
 #endif

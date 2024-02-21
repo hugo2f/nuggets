@@ -22,10 +22,11 @@ display_banner(const char* playerName, int playerNuggets, int unclaimedNuggets, 
 {
     move(0, 0);
     clrtoeol();
-
+    
     mvprintw(0, 0, "Player %s has %d nuggets (%d nuggets unclaimed). %s", playerName, playerNuggets, unclaimedNuggets, additional);
-
+    
     refresh();
+    
 }
 
 static void
@@ -39,4 +40,10 @@ display_board(char* board, int nrows, int ncols)
     }
 
     refresh();
+}
+
+static void
+exit_curses() 
+{
+    endwin();
 }

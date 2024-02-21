@@ -12,6 +12,12 @@ static bool handleSpectatorInput(void* arg);
 static bool handlePlayerInput(void* arg);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 void sendKey(addr_t* serverp, char message);
+void handleOkay(char* symbol);
+void handleGrid(char* coordinates);
+void handleGold(char* counts);
+void handleDisplay(char* board);
+void handleQuit(char* explanation);
+void handleError(char* error);
 
 int 
 main(const int argc, char* argv[]) 
@@ -101,20 +107,20 @@ handleMessage(void* arg, const addr_t from, const char* message)
     char messageType[10];
     char remainder[100];
     sscanf(message, "%s %99[^\n]", messageType, remainder);
-
+    
     if (strcmp(messageType, "OK") == 0) {
-        // handleOkay(remainder);
+        handleOkay(remainder);
     } else if (strcmp(messageType, "GRID") == 0) {
-        // handleGrid(remainder);
+        handleGrid(remainder);
     } else if (strcmp(messageType, "GOLD") == 0) {
-        // handleGold(remainder);
+        handleGold(remainder);
     } else if (strcmp(messageType, "DISPLAY") == 0) {
-        // handleDisplay(remainder);
+        handleDisplay(remainder);
     } else if (strcmp(messageType, "QUIT") == 0) {
-        // handleQuit(remainder);
+        handleQuit(remainder);
         return true;
     } else if (strcmp(messageType, "ERROR") == 0) {
-        // handleError(remainder);
+        handleError(remainder);
     } else {
         fprintf(stderr, "%s is an invalid messageType", messageType);
     }
@@ -128,4 +134,48 @@ sendKey(addr_t* serverp, char key)
     char message[10]; 
     sprintf(message, "KEY %s", key);
     message_send(*serverp, message);
+}
+
+void 
+handleOkay(char* symbol) 
+{
+
+}
+
+void 
+handleGrid(char* coordinates) 
+{
+
+}
+
+void 
+handleGold(char* counts) 
+{
+    int collected, current, remaining;
+    sscanf(counts, "%d %d %d", &collected, &current, &remaining);
+
+    char message[100];
+    sprintf(message, "You collected %d nuggets!", collected);
+    
+    display_banner("playerName", current, remaining, message); // replace with name variable 
+}
+
+void 
+handleDisplay(char* board) 
+{
+
+}
+
+void 
+handleQuit(char* explanation) 
+{
+    exit_curses();
+    printf("%s", explanation);
+    exit(0);
+}
+
+void 
+handleError(char* error) 
+{
+    fprintf("ERROR %s", error);
 }
