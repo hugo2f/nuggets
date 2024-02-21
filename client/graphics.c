@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ncurses.h>
 
-static void
+void
 init_curses(int nrows, int ncols)
 {
     initscr();
@@ -17,7 +17,7 @@ init_curses(int nrows, int ncols)
     attron(COLOR_PAIR(1));
 }
 
-static void
+void
 display_banner(const char* playerName, int playerNuggets, int unclaimedNuggets, char* additional)
 {
     move(0, 0);
@@ -29,7 +29,7 @@ display_banner(const char* playerName, int playerNuggets, int unclaimedNuggets, 
     
 }
 
-static void
+void
 display_board(char* board, int nrows, int ncols)
 {
     for (int y = 0; y < nrows; y++) {
@@ -42,8 +42,8 @@ display_board(char* board, int nrows, int ncols)
     refresh();
 }
 
-static void
-exit_curses() 
+void
+end_curses() 
 {
     endwin();
 }

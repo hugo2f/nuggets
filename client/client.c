@@ -1,15 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <strings.h>
+#include <string.h>
 #include "message.h"
 #include "graphics.h"
 
 typedef bool (*InputHandler)(void* arg);
 
-void parseArgs(const int argc, char* argv[], addr_t* server, char** name, InputHandler* handleInput);
+typedef struct gameState {
+    char* playerName;
+    char* playerSymbol;
+    int nrows;
+    int ncolls;
+} gameState_t;
+
+void parseArgs(const int argc, char* argv[], addr_t* server, InputHandler* handleInput);
 static bool handleSpectatorInput(void* arg);
 static bool handlePlayerInput(void* arg);
+static bool handleInputGeneric(void* server, const char validInputs[]);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 void sendKey(addr_t* serverp, char message);
 void handleOkay(char* symbol);
@@ -19,14 +27,15 @@ void handleDisplay(char* board);
 void handleQuit(char* explanation);
 void handleError(char* error);
 
+struct gameState game = {NULL, NULL, false};
+
 int 
 main(const int argc, char* argv[]) 
 {
     addr_t server;
-    char* playerName;
     InputHandler handleInput;
     
-    parseArgs(argc, argv, &server, &playerName, &handleInput);
+    parseArgs(argc, argv, &server, &handleInput);
     bool messageLoopExitStatus = message_loop(&server, 0, NULL, handleInput, handleMessage);
     message_done();
   
@@ -34,7 +43,7 @@ main(const int argc, char* argv[])
 }
 
 void 
-parseArgs(const int argc, char* argv[], addr_t* serverp, char** playerNamep, InputHandler* handleInputp) 
+parseArgs(const int argc, char* argv[], addr_t* serverp, InputHandler* handleInputp) 
 {
     const char* program = argv[0];
     if (argc != 3 && argc != 4) {
@@ -55,10 +64,9 @@ parseArgs(const int argc, char* argv[], addr_t* serverp, char** playerNamep, Inp
     }
 
     if (argc == 3) {
-        *playerNamep = NULL;
         *handleInputp = handleSpectatorInput;
     } else {
-        *playerNamep = argv[3];
+        game.playerName = argv[3];
         *handleInputp = handlePlayerInput;
     }
 }
@@ -132,20 +140,24 @@ void
 sendKey(addr_t* serverp, char key)
 {
     char message[10]; 
-    sprintf(message, "KEY %s", key);
+    sprintf(message, "KEY %c", key);
     message_send(*serverp, message);
 }
 
 void 
 handleOkay(char* symbol) 
 {
-
+    game.playerSymbol = symbol;
 }
 
 void 
 handleGrid(char* coordinates) 
 {
-
+    int nrows, ncolls;
+    sscanf(coordinates, "%d %d", &nrows, &ncolls);
+    game.nrows = nrows;
+    game.ncolls = ncolls;
+    init_curses(nrows, ncolls);
 }
 
 void 
@@ -157,13 +169,13 @@ handleGold(char* counts)
     char message[100];
     sprintf(message, "You collected %d nuggets!", collected);
     
-    display_banner("playerName", current, remaining, message); // replace with name variable 
+    display_banner(game.playerSymbol, current, remaining, message); 
 }
 
 void 
 handleDisplay(char* board) 
 {
-
+    display_board(board, game.nrows, game.ncolls);
 }
 
 void 
@@ -177,5 +189,5 @@ handleQuit(char* explanation)
 void 
 handleError(char* error) 
 {
-    fprintf("ERROR %s", error);
+    fprintf(stderr, "ERROR %s", error);
 }

@@ -19,4 +19,4 @@ test: client
 
 clean:
 	rm -f core
-	rm -f $(LIB) client *~ *.o
+	rm -f $(LIB) client graphics *~ *.o
