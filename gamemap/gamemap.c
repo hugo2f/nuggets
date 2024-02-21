@@ -1,5 +1,5 @@
 /*
- * GameMap_T.c    Hugo Fang    2/21/2024
+ * GameMap_t.c    Hugo Fang    2/21/2024
  * 
  * defines the struct and functions related to storing and processing the game map
  */
@@ -10,19 +10,49 @@
 
 #include "file.h"
 
+/* Local types */
 typedef struct GameMap {
-    int numRows, numCols; // size of map
-    char** grid; // terrain features
-    char** gameGrid; // also stores players and gold 
-} GameMap_T;
+  int numRows, numCols; // size of map
+  char** grid; // terrain features
+} GameMap_t;
 
-GameMap_T* loadMapFile(char* mapFilePath)
+/* Local functions */
+
+// Getters
+int getNumRows(GameMap_t* map)
+{
+  if (map == NULL) {
+    return 0;
+  }
+  return map->numRows;
+}
+
+int getNumCols(GameMap_t* map)
+{
+  if (map == NULL) {
+    return 0;
+  }
+  return map->numCols;
+}
+
+char** getGrid(GameMap_t* map)
+{
+  if (map == NULL) {
+    return 0;
+  }
+  return map->grid;
+}
+
+// Helper functions
+static void deleteGrid(char** grid, int numRows);
+
+GameMap_t* loadMapFile(char* mapFilePath)
 {
   FILE* fp = fopen(mapFilePath, "r");
   if (fp == NULL) {
     return NULL;
   }
-  GameMap_T* map = malloc(sizeof(GameMap_T));
+  GameMap_t* map = malloc(sizeof(GameMap_t));
   if (map == NULL) {
     fclose(fp);
     return NULL;
@@ -30,7 +60,9 @@ GameMap_T* loadMapFile(char* mapFilePath)
 
   // initialize map variables
   int numRows = file_numLines(fp);
-  int numCols = strlen(file_readLine(fp));
+  char* line = file_readLine(fp);
+  int numCols = strlen(line);
+  free(line);
   rewind(fp);
 
   map->numRows = numRows;
@@ -41,27 +73,18 @@ GameMap_T* loadMapFile(char* mapFilePath)
   if (map->grid == NULL) {
     return NULL;
   }
-  map->gameGrid = malloc(numRows * sizeof(char*));
-  if (map->gameGrid == NULL) {
-    return NULL;
-  }
 
   for (int row = 0; row < numRows; row++) {
     char* line = file_readLine(fp);
     map->grid[row] = malloc(numCols * sizeof(char));
     if (map->grid[row] == NULL) {
-      return NULL;
-    }
-    map->gameGrid[row] = malloc(numCols * sizeof(char));
-    if (map->gameGrid[row] == NULL) {
-      return NULL;
+      break;
     }
 
     for (int col = 0; col < numCols; col++) {
       // when loading a file, grid and gameGrid are the same
       // after the game starts, only gameGrid stores the players and gold
       map->grid[row][col] = line[col];
-      map->gameGrid[row][col] = line[col];
     }
     free(line);
   }
@@ -69,14 +92,13 @@ GameMap_T* loadMapFile(char* mapFilePath)
   return map;
 }
 
-void deleteGameMap_T(GameMap_T* map)
+void deleteGameMap(GameMap_t* map)
 {
   if (map == NULL) {
     return;
   }
 
   deleteGrid(map->grid, map->numRows);
-  deleteGrid(map->gameGrid, map->numRows);
   free(map);
 }
 
@@ -94,40 +116,32 @@ void deleteGrid(char** grid, int numRows)
   free(grid);
 }
 
-char getCellType(GameMap_T* map, int row, int col)
+char getCellType(GameMap_t* map, int row, int col)
 {
   if (row < 0 || row >= map->numRows || col < 0 || col >= map->numCols) {
-    return NULL;
+    return '\0';
   }
-  return map->gameGrid[row][col];
+  return map->grid[row][col];
 }
 
-char** getPlayerMap()
-{
-  // TODO
-  return NULL; 
-}
-
-char** getVisibleRegion(GameMap_T* map, int row, int col)
+char** getVisibleRegion(GameMap_t* map, int row, int col)
 {
   // TODO
   return NULL;
 }
 
-char** getSpectatorMap(GameMap_T* map)
+void printMap(GameMap_t* map)
 {
   if (map == NULL) {
-    return NULL;
+    printf("map is NULL\n");
+    return;
   }
-  return map->gameGrid;
-}
 
-void movePlayer(GameMap_T* map)
-{
-
-}
-
-void spawnGold(GameMap_T* map)
-{
-  
+  for (int row = 0; row < map->numRows; row++) {
+    for (int col = 0; col < map->numCols; col++) {
+      printf("%c", map->grid[row][col]);
+    }
+    printf("\n");
+  }
+  printf("----------\n");
 }
