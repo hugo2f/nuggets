@@ -3,11 +3,16 @@
 #include <string.h>
 #include <ncurses.h>
 
-void
+bool
 init_curses(int nrows, int ncols)
 {
     initscr();
-    getmaxyx(stdscr, nrows, ncols);
+    int nrowsScreen, ncolsScreen;
+    getmaxyx(stdscr, nrowsScreen, ncolsScreen);
+
+    if (nrows >= nrowsScreen || ncols >= ncolsScreen) {
+        return false;
+    }
 
     cbreak();
     noecho();
@@ -15,6 +20,8 @@ init_curses(int nrows, int ncols)
     start_color();
     init_pair(1, COLOR_WHITE, COLOR_BLACK);
     attron(COLOR_PAIR(1));
+
+    return true;
 }
 
 void
