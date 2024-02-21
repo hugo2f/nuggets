@@ -236,7 +236,7 @@ The server logs every message sent to the server from a client and from the serv
 * Game Module: 
 * Network Module: The network module shall handle all network connections with clients (connection management and message communication)
 * Player Module: Module that is used to keep track of player data (name, current score, current position, current visibility). It will also contain functions to initialize new players and delete an existing players.
-* Map module: implements the data structure and functions related to the game map. 
+* GameMap module: implements the data structure and functions related to the game map. 
 
 Main Module:
 * `parseArgs`
@@ -330,18 +330,19 @@ We define a `player` struct to store each player's information, including:
 
 ---
 
-## map module
+## gamemap module
 
-The `map` module provides the data structure to store all map information. The contents will be stored as a 2D array of characters. Refer to the [Requirements Spec](REQUIREMENTS.md) for the types of characters in a map.
+The `gamemap` module provides the data structure to store all map information. The contents will be stored as a 2D array of characters. Refer to the [Requirements Spec](REQUIREMENTS.md) for the types of characters in a map.
 
 ### Functional decomposition
 
 We anticipate the following functions:
 1. `loadMapFile`, which reads a map file and stores it in a `grid`
-4. `getCellType`, which returns the type of cell corresponding to a coordinate in the map
-6. `getPlayerMap`, which returns the map that is visible to a player, including visible players and gold piles
-7. `getVisibleRegion`, which returns an array of the cells currently visible to a player
-8. `getSpectatorMap`, which returns the map that a spectator sees, with all player and gold information
+2. `GameMap_delete`, which frees all memory allocated for a GameMap
+3. `getCellType`, which returns the type of cell corresponding to a coordinate in the map
+4. `getPlayerMap`, which returns the map that is visible to a player, including visible players and gold piles
+5. `getVisibleRegion`, which returns an array of the cells currently visible to a player
+6. `getSpectatorMap`, which returns the map that a spectator sees, with all player and gold information
 
 ### Pseudocode for logic/algorithmic flow
 
