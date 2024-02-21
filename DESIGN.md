@@ -365,17 +365,6 @@ Frees related memory for data structures used in the `gamemap` module. See the [
 return the character stored in the map at a coordinate
 ```
 
-#### getPlayerMap
-```
-initialize a copy of the player's visibleMap to return
-get the cells visible the the player (getVisibleRegion)
-for each cell in the visible region
-    update the player's visibleMap
-    if there is a player or gold in the region
-        update the returned map to show the player/gold
-return the map copy 
-```
-
 #### getVisibleRegion
 ```
 initialize an empty array of cells
@@ -385,26 +374,12 @@ return the array
 ```
 
 
-#### getSpectatorMap
-```
-copy the grid
-for each player
-    replace the its cell with the player character
-for each remaining gold pile
-    replace its cell with the gold character
-return the new grid
-```
-
-
 ### Major data structures
 
 #### grid & gameGrid
 The `grid` will store a 2D array of characters representing the map, including solid rock, boundaries, empty room spots, and empty passage spots. It is basically an in-memory version of the map file.
 
 The `gameGrid` is a copy of `grid`, but also stores where players and gold piles are. It contains all game information at each point in time, and is what the spectator sees.
-
-#### goldPile
-A `goldPile` stores its location `(row, col)` in the map, and the `amount` of gold in that pile. `amount` is set to `0` if the pile has been taken.
 
 ---
 
@@ -420,14 +395,12 @@ In addition to the testing scenarios below, we will use Valgrind to ensure that 
 5. Test resizing initially 
 6. Potentially fuzz inputs
 
-
 ### server
 1. Run with invalid ports and incorrect seed values and incorrect number of args 
 2. Try with the miniclient
-4. Send it malformed packets and unexpected messages
-5. Log on too many users
+3. Send it malformed packets and unexpected messages
+4. Log on too many users
 
-### map
+### gamemap
 1. Try to load and output from different map files, and compare the file vs. output
-2. Call getPlayerMap on different combinations of coordinates and maps
-3. Simulate games with different numbers of players, and make sure the spectator sees everything
+2. Simulate games with different numbers of players, and make sure the spectator sees everything
