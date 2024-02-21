@@ -12,7 +12,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <strings.h>
+#include <string.h>
 #include "message.h"
+
 
 /**************** file-local functions ****************/
 
