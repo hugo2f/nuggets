@@ -133,10 +133,10 @@ char** getVisibleRegion(GameMap_t* map, int row, int col)
 void printMap(GameMap_t* map)
 {
   if (map == NULL) {
-    printf("map is NULL");
+    printf("map is NULL\n");
     return;
   }
-  
+
   for (int row = 0; row < map->numRows; row++) {
     for (int col = 0; col < map->numCols; col++) {
       printf("%c", map->grid[row][col]);

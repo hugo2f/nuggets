@@ -23,34 +23,23 @@ int main(const int argc, char* argv[])
   }
 
   // Load maps and output
-  GameMap_t* map = loadMapFile("../maps/big.txt");
-  printf("big.txt: %dx%d\n", getNumRows(map), getNumCols(map));
-  for (int row = 0; row < getNumRows(map); row++) {
-    for (int col = 0; col < getNumCols(map); col++) {
-      printf("%c", getGrid(map)[row][col]);
-    }
-    printf("\n");
-  }
+
+  // Invalid map
+  GameMap_t* map = loadMapFile("../maps/asdf.txt");
+  printf("asdf.txt: %dx%d\n", getNumRows(map), getNumCols(map));
+  printMap(map);
   deleteGameMap(map);
 
   map = loadMapFile("../maps/hole.txt");
   printf("hole.txt: %dx%d\n", getNumRows(map), getNumCols(map));
-  for (int row = 0; row < getNumRows(map); row++) {
-    for (int col = 0; col < getNumCols(map); col++) {
-      printf("%c", getGrid(map)[row][col]);
-    }
-    printf("\n");
-  }
+  printMap(map);
   deleteGameMap(map);
 
   map = loadMapFile("../maps/main.txt");
   printf("main.txt: %dx%d\n", getNumRows(map), getNumCols(map));
-  for (int row = 0; row < getNumRows(map); row++) {
-    for (int col = 0; col < getNumCols(map); col++) {
-      printf("%c", getGrid(map)[row][col]);
-    }
-    printf("\n");
-  }
+  printMap(map);
   deleteGameMap(map);
+
+  //
   return 0;
 }
