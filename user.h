@@ -17,6 +17,6 @@
 typedef struct user user_t;
 
 
-user_t* createUser(char ID, GameMap* map, int gold, char* realName);
+user_t* createUser(char ID, GameMap* map, int gold, char* realName, int row, int column);
 
 #endif //__USER_H

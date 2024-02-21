@@ -10,9 +10,11 @@ typedef struct user {
   GameMap* map;
   int gold;
   char* realName;
+  int row;
+  int column;
 } user_t;
 
-user_t* createUser(char ID, GameMap* map, int gold, char* realName)
+user_t* createUser(char ID, GameMap* map, int gold, char* realName, int row, int column)
 {
   user_t* user = malloc(sizeof(user_t));
   if(user != NULL){
@@ -20,6 +22,8 @@ user_t* createUser(char ID, GameMap* map, int gold, char* realName)
     user->map = map;
     user->gold = gold;
     user->realName = realName;
+    user->row = row;
+    user->column = column;
     return user;
   }
   return NULL;
