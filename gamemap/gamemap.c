@@ -67,6 +67,7 @@ GameMap* loadMapFile(char* mapFilePath)
     free(line);
   }
   fclose(fp);
+  return map;
 }
 
 void GameMap_delete(GameMap* map)
@@ -74,7 +75,7 @@ void GameMap_delete(GameMap* map)
   if (map == NULL) {
     return;
   }
-  
+
   for (int row = 0; row < map->numRows; row++) {
     free(map->grid[row]);
     free(map->gameGrid[row]);
