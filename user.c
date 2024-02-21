@@ -12,7 +12,7 @@ typedef struct user {
   int gold;
   char* realName;
   int row;
-  int column;
+  int col;
 } user_t;
 
 user_t* createUser(char ID, GameMap* map, int gold, char* realName, int row, int col)
@@ -24,7 +24,7 @@ user_t* createUser(char ID, GameMap* map, int gold, char* realName, int row, int
     user->gold = gold;
     user->realName = realName;
     user->row = row;
-    user->column = column;
+    user->col = col;
     return user;
   }
   return NULL;
