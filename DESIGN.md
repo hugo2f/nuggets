@@ -338,11 +338,12 @@ The `gamemap` module provides the data structure to store all map information. T
 
 We anticipate the following functions:
 1. `loadMapFile`, which reads a map file and stores it in a `grid`
-2. `GameMap_delete`, which frees all memory allocated for a GameMap
-3. `getCellType`, which returns the type of cell corresponding to a coordinate in the map
-4. `getPlayerMap`, which returns the map that is visible to a player, including visible players and gold piles
-5. `getVisibleRegion`, which returns an array of the cells currently visible to a player
-6. `getSpectatorMap`, which returns the map that a spectator sees, with all player and gold information
+2. `deleteGameMap`, which frees all memory allocated for a GameMap
+3. `deleteGrid`, which frees all memory allocated for a 2D `char` array
+4. `getCellType`, which returns the type of cell corresponding to a coordinate in the map
+5. `getPlayerMap`, which returns the map that is visible to a player, including visible players and gold piles
+6. `getVisibleRegion`, which returns an array of the cells currently visible to a player
+7. `getSpectatorMap`, which returns the map that a spectator sees, with all player and gold information
 
 ### Pseudocode for logic/algorithmic flow
 
@@ -355,6 +356,9 @@ for each line in the file
         store the character in the array
 return the map
 ```
+
+#### deleteGameMap/deleteGrid
+Frees related memory for data structures used in the `gamemap` module. See the [implementation spec](./IMPLEMENTATION.md) for details.
 
 #### getCellType
 ```

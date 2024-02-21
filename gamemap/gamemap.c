@@ -16,7 +16,6 @@ typedef struct {
     char** gameGrid; // also stores players and gold 
 } GameMap;
 
-
 GameMap* loadMapFile(char* mapFilePath)
 {
   FILE* fp = fopen(mapFilePath, "r");
@@ -70,17 +69,55 @@ GameMap* loadMapFile(char* mapFilePath)
   return map;
 }
 
-void GameMap_delete(GameMap* map)
+void deleteGameMap(GameMap* map)
 {
   if (map == NULL) {
     return;
   }
 
-  for (int row = 0; row < map->numRows; row++) {
-    free(map->grid[row]);
-    free(map->gameGrid[row]);
-  }
-  free(map->grid);
-  free(map->gameGrid);
+  deleteGrid(map->grid, map->numRows);
+  deleteGrid(map->gameGrid, map->numRows);
   free(map);
+}
+
+void deleteGrid(char** grid, int numRows)
+{
+  if (grid == NULL) {
+    return;
+  }
+
+  // free every row
+  for (int row = 0; row < numRows; row++) {
+    free(grid[row]);
+  }
+  // free pointer
+  free(grid);
+}
+
+char getCellType(GameMap* map, int row, int col)
+{
+  if (row < 0 || row >= map->numRows || col < 0 || col >= map->numCols) {
+    return NULL;
+  }
+  return map->gameGrid[row][col];
+}
+
+char** getPlayerMap()
+{
+  // TODO
+  return NULL; 
+}
+
+char** getVisibleRegion(GameMap* map, int row, int col)
+{
+  // TODO
+  return NULL;
+}
+
+char** getSpectatorMap(GameMap* map)
+{
+  if (map == NULL) {
+    return NULL;
+  }
+  return map->gameGrid;
 }
