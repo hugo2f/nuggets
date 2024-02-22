@@ -121,9 +121,7 @@ handleInputSpecific(addr_t* serverp, const char validInputs[])
 static bool
 handleMessage(void* arg, const addr_t from, const char* message)
 {
-    if (message == NULL) {
-        return false;
-    }
+    if (message == NULL) return false;
     
     char messageType[10];
     char remainder[100];
@@ -152,9 +150,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
 static void 
 sendStart(addr_t* serverp) 
 {
-    if (game.status != 0) {
-        return;
-    }
+    if (game.status != 0) return;
     
     if (game.playerName == NULL) {
         sendSpectate(serverp);
@@ -180,9 +176,7 @@ sendSpectate(addr_t* serverp)
 static void 
 sendKey(addr_t* serverp, char key)
 {
-    if (game.status != 3) {
-        return;
-    }
+    if (game.status != 3) return;
     
     char message[10]; 
     sprintf(message, "KEY %c", key);
@@ -207,9 +201,7 @@ indicateInvalidKey(char key)
 static void 
 handleOkay(char* symbol) 
 {
-    if (game.status != 1) {
-        return;
-    }
+    if (game.status != 1) return;
 
     game.playerSymbol = symbol;
 }
@@ -217,9 +209,7 @@ handleOkay(char* symbol)
 static void 
 handleGrid(char* coordinates) 
 {
-    if (game.status != 1) {
-        return;
-    }
+    if (game.status != 1) return;
     
     int nrows, ncols;
     sscanf(coordinates, "%d %d", &nrows, &ncols);
@@ -240,9 +230,7 @@ handleGrid(char* coordinates)
 static void 
 handleGold(char* counts) 
 {
-    if (game.status != 3) {
-        return;
-    }
+    if (game.status != 3) return;
     
     int collected, current, remaining;
     sscanf(counts, "%d %d %d", &collected, &current, &remaining);
@@ -256,9 +244,7 @@ handleGold(char* counts)
 static void 
 handleDisplay(char* board) 
 {
-    if (game.status != 3) {
-        return;
-    }
+    if (game.status != 3) return;
 
     display_board(board, game.nrows, game.ncols);
 }
@@ -266,9 +252,7 @@ handleDisplay(char* board)
 static void 
 handleQuit(char* explanation) 
 {
-    if (game.status != 3) {
-        return;
-    }
+    if (game.status != 3) return;
     
     end_curses();
     printf("QUIT %s\n", explanation);
