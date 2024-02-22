@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <ncurses.h>
 
 bool
@@ -30,23 +31,39 @@ display_banner(const char* playerName, int playerNuggets, int unclaimedNuggets, 
     move(0, 0);
     clrtoeol();
     
-    mvprintw(0, 0, "Player %s has %d nuggets (%d nuggets unclaimed). %s", playerName, playerNuggets, unclaimedNuggets, additional);
+    char banner[200];
+    sprintf(banner, "Player %s has %d nuggets (%d nuggets unclaimed). %s", playerName, playerNuggets, unclaimedNuggets, additional);
+    mvprintw(0, 0, "%s", banner);
     
     refresh();
     
 }
 
+// TODO: see if this can be done using mods
 void
 display_board(char* board, int nrows, int ncols)
 {
-    for (int y = 0; y < nrows; y++) {
-        for (int x = 0; x < ncols; x++) {
-            move(y + 1, x);
-            addch(board[y * nrows + x]);
-        }
-    }
+    int x = 0;
+    int y = 0;
+    
+    for (int i = 0; i < strlen(board); i++) {
+        char c = board[i];
 
-    refresh();
+        if (x >= ncols) {
+            x = 0;
+            y++;
+        }
+
+        if (y >= nrows) {
+            clear();
+            x = 0;
+            y = 0;
+        }
+
+        mvaddch(y, x, c);
+        refresh();
+        x++;
+    }
 }
 
 void

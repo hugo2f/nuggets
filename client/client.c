@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <strings.h>
+#include <ncurses.h>
 #include "message.h"
 #include "graphics.h"
-
-typedef bool (*InputHandler)(void* arg);
 
 typedef struct gameState {
     char* playerName;
@@ -14,43 +14,41 @@ typedef struct gameState {
     int goldRemaining;
     int nrows;
     int ncols;
-    bool started;
+    int status;
 } gameState_t;
 
-void parseArgs(const int argc, char* argv[], addr_t* server, InputHandler* handleInput);
-static bool handleSpectatorInput(void* arg);
-static bool handlePlayerInput(void* arg);
-static bool handleInputGeneric(void* server, const char validInputs[]);
+static void parseArgs(const int argc, char* argv[], addr_t* serverp);
+static bool handleInputGeneric(void* server);
+static bool handleInputSpecific(addr_t* serverp, const char validInputs[]);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
-void sendStart(addr_t* serverp);
-void sendPlay(addr_t* serverp);
-void sendKey(addr_t* serverp, char message);
-void sendSpectate(addr_t* serverp);
-void indicateInvalidKey(char key);
-void handleOkay(char* symbol);
-void handleGrid(char* coordinates);
-void handleGold(char* counts);
-void handleDisplay(char* board);
-void handleQuit(char* explanation);
-void handleError(char* error);
+static void sendStart(addr_t* serverp);
+static void sendPlay(addr_t* serverp);
+static void sendKey(addr_t* serverp, char message);
+static void sendSpectate(addr_t* serverp);
+static void sendReceipt(addr_t* serverp);
+static void indicateInvalidKey(char key);
+static void handleOkay(char* symbol);
+static void handleGrid(char* coordinates);
+static void handleGold(char* counts);
+static void handleDisplay(char* board);
+static void handleQuit(char* explanation);
+static void handleError(char* error);
 
-struct gameState game = {NULL, NULL, 0, 0, 0, 0, false};
+struct gameState game = {NULL, NULL, 0, 0, 0, 0, 0};
 
 int 
 main(const int argc, char* argv[]) 
 {
     addr_t server;
-    InputHandler handleInput;
-    
-    parseArgs(argc, argv, &server, &handleInput);
-    bool messageLoopExitStatus = message_loop(&server, 0, NULL, handleInput, handleMessage);
+    parseArgs(argc, argv, &server);
+    bool messageLoopExitStatus = message_loop(&server, 0, NULL, handleInputGeneric, handleMessage);
     message_done();
   
     return messageLoopExitStatus? 0 : 1;
 }
 
 void 
-parseArgs(const int argc, char* argv[], addr_t* serverp, InputHandler* handleInputp) 
+parseArgs(const int argc, char* argv[], addr_t* serverp) 
 {
     const char* program = argv[0];
     if (argc != 3 && argc != 4) {
@@ -58,7 +56,7 @@ parseArgs(const int argc, char* argv[], addr_t* serverp, InputHandler* handleInp
         exit(2);
     }
 
-    if (message_init(stderr) == 0) {
+    if (message_init(NULL) == 0) {
         fprintf(stderr, "Could not init message module!");
         exit(3);
     }
@@ -70,29 +68,14 @@ parseArgs(const int argc, char* argv[], addr_t* serverp, InputHandler* handleInp
         exit(4);
     }
 
-    if (argc == 3) {
-        *handleInputp = handleSpectatorInput;
-    } else {
+    if (argc == 4) {
         game.playerName = argv[3];
-        *handleInputp = handlePlayerInput;
     }
 }
 
 static bool 
-handleSpectatorInput(void* server) 
+handleInputGeneric(void* server) 
 {
-    return handleInputGeneric(server, "q");  
-}
-
-static bool 
-handlePlayerInput(void* server) 
-{
-    return handleInputGeneric(server, "qhljkyunb");  
-}
-
-static bool 
-handleInputGeneric(void* server, const char validInputs[])
-{    
     addr_t* serverp = server;
     if (serverp == NULL) {
         fprintf(stderr, "InputHandler called with arg=NULL");
@@ -104,18 +87,34 @@ handleInputGeneric(void* server, const char validInputs[])
         return true;
     }
 
-    if (!game.started) {
+    if (game.status == 0) {
         sendStart(serverp);
+        game.status = 1;
         return false;
+    } else if (game.status == 1) {
+        sendReceipt(serverp); // for testing
+        return false;
+    } else if (game.status == 3) {
+        if (game.playerName == NULL) {
+            return handleInputSpecific(serverp, "q");  
+        } else {
+            return handleInputSpecific(serverp, "qhljkyunb");  
+        }
+    } else {
+        return true;
     }
-    
-    char input = getchar();
+}
+
+static bool 
+handleInputSpecific(addr_t* serverp, const char validInputs[])
+{    
+    char input = getch();
     if (strchr(validInputs, input) != NULL) {
         sendKey(serverp, input);
     } else {
         indicateInvalidKey(input);
     }
-
+    
     return false;
 }
 
@@ -150,8 +149,13 @@ handleMessage(void* arg, const addr_t from, const char* message)
     return false;
 }
 
-void 
-sendStart(addr_t* serverp) {
+static void 
+sendStart(addr_t* serverp) 
+{
+    if (game.status != 0) {
+        return;
+    }
+    
     if (game.playerName == NULL) {
         sendSpectate(serverp);
     } else {
@@ -159,27 +163,39 @@ sendStart(addr_t* serverp) {
     }
 }
 
-void
-sendPlay(addr_t* serverp) {
+static void
+sendPlay(addr_t* serverp) 
+{
     char message[100]; 
-    sprintf(message, "PLAY %c", game.playerName);
+    sprintf(message, "PLAY %s", game.playerName);
     message_send(*serverp, message);
 }
 
-void
-sendSpectate(addr_t* serverp) {
+static void
+sendSpectate(addr_t* serverp) 
+{
     message_send(*serverp, "SPECTATE");
 }
 
-void 
+static void 
 sendKey(addr_t* serverp, char key)
 {
+    if (game.status != 3) {
+        return;
+    }
+    
     char message[10]; 
     sprintf(message, "KEY %c", key);
     message_send(*serverp, message);
+    display_banner(game.playerSymbol, game.playerGold, game.goldRemaining, NULL);
 }
 
-void
+static void
+sendReceipt(addr_t* serverp) {
+    message_send(*serverp, "received");
+}
+
+static void
 indicateInvalidKey(char key) 
 {
     char message[100];
@@ -188,33 +204,46 @@ indicateInvalidKey(char key)
     display_banner(game.playerSymbol, game.playerGold, game.goldRemaining, message); 
 }
 
-void 
+static void 
 handleOkay(char* symbol) 
 {
+    if (game.status != 1) {
+        return;
+    }
+
     game.playerSymbol = symbol;
 }
 
-void 
+static void 
 handleGrid(char* coordinates) 
 {
+    if (game.status != 1) {
+        return;
+    }
+    
     int nrows, ncols;
     sscanf(coordinates, "%d %d", &nrows, &ncols);
     
     if (init_curses(nrows, ncols)) {
         game.nrows = nrows;
         game.ncols = ncols;
-        game.started = true;
+        game.status = 3;
         return;
     } 
 
-    while (!init_curses(nrows, ncols)) {
-        printf("You must enlarge the window to at least %d %d!", nrows, ncols);
-    }
+    printf("You must enlarge the window to at least %d %d!", nrows, ncols);
+    fflush(stdout);
+
+    while (!init_curses(nrows, ncols));
 }
 
-void 
+static void 
 handleGold(char* counts) 
 {
+    if (game.status != 3) {
+        return;
+    }
+    
     int collected, current, remaining;
     sscanf(counts, "%d %d %d", &collected, &current, &remaining);
 
@@ -224,21 +253,30 @@ handleGold(char* counts)
     display_banner(game.playerSymbol, game.playerGold, game.goldRemaining, message); 
 }
 
-void 
+static void 
 handleDisplay(char* board) 
 {
+    if (game.status != 3) {
+        return;
+    }
+
     display_board(board, game.nrows, game.ncols);
 }
 
-void 
+static void 
 handleQuit(char* explanation) 
 {
-    exit_curses();
-    printf("%s", explanation);
+    if (game.status != 3) {
+        return;
+    }
+    
+    end_curses();
+    printf("QUIT %s\n", explanation);
+    fflush(stdout);
     exit(0);
 }
 
-void 
+static void 
 handleError(char* error) 
 {
     fprintf(stderr, "ERROR %s", error);
