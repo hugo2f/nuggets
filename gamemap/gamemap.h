@@ -21,6 +21,7 @@ typedef struct GameMap GameMap_t;
 int getNumRows(GameMap_t* map);
 int getNumCols(GameMap_t* map);
 char** getGrid(GameMap_t* map);
+char** getGameGrid(GameMap_t* map);
 
 /*
  * Loads a map file into a GameMap_t
@@ -67,6 +68,26 @@ void deleteGrid(char** grid, int numRows);
 char getCellType(GameMap_t* map, int row, int col);
 
 /*
+ * Set the type of cell at a coordinate
+ *
+ * Inputs:
+ *   map to update
+ *   type of cell to set to
+ *   row, col: coordinates of target cell
+ */
+void setCellType(GameMap_t* map, char type, int row, int col);
+
+/*
+ * (For use after a player moves from a cell)
+ * Restore a cell type to the map terrain at the cell
+ *
+ * Inputs:
+ *   map to update
+ *   row, col: coordinates of target cell
+ */
+void restoreCell(GameMap_t* map, int row, int col);
+
+/*
  * For a given coordinate, get a boolean version of the map.
  * true means visible, false means not visible
  *
@@ -75,11 +96,12 @@ char getCellType(GameMap_t* map, int row, int col);
  *   row, col: starting coordinate
  * 
  * Returns:
- *   2D numRows x numCols array of booleans
+ *   2D numRows x numCols array of visible coordinates,
+ *     terminated by (-1, -1)
  * 
  * Caller needs to later call deleteGrid on the returned pointer
  */
-bool** getVisibleRegion(GameMap_t* map, int row, int col);
+int** getVisibleRegion(GameMap_t* map, int row, int col);
 
 /*
  * Print out a map (for testing)
@@ -90,5 +112,20 @@ bool** getVisibleRegion(GameMap_t* map, int row, int col);
  * Prints out "map is NULL" if a null pointer is passed in
  */
 void printMap(GameMap_t* map);
+
+/*
+ * Convert a GameMap_t.gameGrid into a string. The string will
+ * contain a newline after every row, with last row terminated by '\0'
+ *
+ * Inputs:
+ *   map to convert with
+ * 
+ * Returns:
+ *   char* string of converted gameGrid
+ *   NULL if map is NULL
+ * 
+ * Caller needs to free the returned pointer
+ */
+char* gridToString(GameMap_t* map);
 
 #endif // __GameMap_t_H__

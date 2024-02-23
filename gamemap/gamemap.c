@@ -14,6 +14,7 @@
 typedef struct GameMap {
   int numRows, numCols; // size of map
   char** grid; // terrain features
+  char** gameGrid; // spectator view with players and gold
 } GameMap_t;
 
 /* Local functions */
@@ -41,6 +42,14 @@ char** getGrid(GameMap_t* map)
     return 0;
   }
   return map->grid;
+}
+
+char** getGameGrid(GameMap_t* map)
+{
+  if (map == NULL) {
+    return 0;
+  }
+  return map->gameGrid;
 }
 
 // Helper functions
@@ -73,6 +82,10 @@ GameMap_t* loadMapFile(char* mapFilePath)
   if (map->grid == NULL) {
     return NULL;
   }
+  map->gameGrid = malloc(numRows * sizeof(char*));
+  if (map->gameGrid == NULL) {
+    return NULL;
+  }
 
   for (int row = 0; row < numRows; row++) {
     char* line = file_readLine(fp);
@@ -80,11 +93,16 @@ GameMap_t* loadMapFile(char* mapFilePath)
     if (map->grid[row] == NULL) {
       break;
     }
+    map->gameGrid[row] = malloc(numCols * sizeof(char));
+    if (map->gameGrid[row] == NULL) {
+      break;
+    }
 
     for (int col = 0; col < numCols; col++) {
       // when loading a file, grid and gameGrid are the same
       // after the game starts, only gameGrid stores the players and gold
       map->grid[row][col] = line[col];
+      map->gameGrid[row][col] = line[col];
     }
     free(line);
   }
@@ -99,6 +117,7 @@ void deleteGameMap(GameMap_t* map)
   }
 
   deleteGrid(map->grid, map->numRows);
+  deleteGrid(map->gameGrid, map->numRows);
   free(map);
 }
 
@@ -112,7 +131,7 @@ void deleteGrid(char** grid, int numRows)
   for (int row = 0; row < numRows; row++) {
     free(grid[row]);
   }
-  // free pointer
+  // free grid pointer
   free(grid);
 }
 
@@ -124,7 +143,23 @@ char getCellType(GameMap_t* map, int row, int col)
   return map->grid[row][col];
 }
 
-char** getVisibleRegion(GameMap_t* map, int row, int col)
+void setCellType(GameMap_t* map, char type, int row, int col)
+{
+  if (row < 0 || row >= map->numRows || col < 0 || col >= map->numCols) {
+    return;
+  }
+  map->gameGrid[row][col] = type;
+}
+
+void restoreCell(GameMap_t* map, int row, int col)
+{
+  if (row < 0 || row >= map->numRows || col < 0 || col >= map->numCols) {
+    return;
+  }
+  map->gameGrid[row][col] = map->grid[row][col];
+}
+
+int** getVisibleRegion(GameMap_t* map, int row, int col)
 {
   // TODO
   return NULL;
@@ -143,5 +178,27 @@ void printMap(GameMap_t* map)
     }
     printf("\n");
   }
-  printf("----------\n");
+}
+
+char* gridToString(GameMap_t* map)
+{
+  if (map == NULL) {
+    return NULL;
+  }
+
+  int numRows = map->numRows, numCols = map->numCols;
+  int totalLength = numRows * (numCols + 1);
+  char* res = malloc(totalLength * sizeof(char));
+  if (res == NULL) {
+    return NULL;
+  }
+
+  int curIndex = 0;
+  for (int row = 0; row < numRows; row++) {
+    strncpy(&res[curIndex], map->gameGrid[row], numCols);
+    curIndex += numCols;
+    res[curIndex++] = '\n';
+  }
+  res[totalLength - 1] = '\0';
+  return res;
 }

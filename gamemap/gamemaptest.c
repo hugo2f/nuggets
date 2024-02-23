@@ -23,23 +23,28 @@ int main(const int argc, char* argv[])
   }
 
   // Load maps and output
+  GameMap_t* map = NULL;
 
   // Invalid map
-  GameMap_t* map = loadMapFile("../maps/asdf.txt");
-  printf("asdf.txt: %dx%d\n", getNumRows(map), getNumCols(map));
-  printMap(map);
-  deleteGameMap(map);
+  // GameMap_t* map = loadMapFile("../maps/asdf.txt");
+  // printf("asdf.txt: %dx%d\n", getNumRows(map), getNumCols(map));
+  // printMap(map);
+  // deleteGameMap(map);
 
+  // Valid maps
   map = loadMapFile("../maps/hole.txt");
   printf("hole.txt: %dx%d\n", getNumRows(map), getNumCols(map));
   printMap(map);
+  printf("------\n");
+  char* gridString = gridToString(map);
+  printf("%s\n", gridString);
+  free(gridString);
   deleteGameMap(map);
 
-  map = loadMapFile("../maps/main.txt");
-  printf("main.txt: %dx%d\n", getNumRows(map), getNumCols(map));
-  printMap(map);
-  deleteGameMap(map);
+  // map = loadMapFile("../maps/main.txt");
+  // printf("main.txt: %dx%d\n", getNumRows(map), getNumCols(map));
+  // printMap(map);
+  // deleteGameMap(map);
 
-  //
   return 0;
 }
