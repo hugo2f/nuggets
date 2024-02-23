@@ -9,7 +9,7 @@
 
 typedef struct gameState {
     char* playerName;
-    char* playerSymbol;
+    char playerSymbol;
     int nrows;
     int ncols;
     int status;
@@ -32,7 +32,7 @@ static void handleDisplay(char* board);
 static void handleQuit(char* explanation);
 static void handleError(char* error);
 
-struct gameState game = {NULL, NULL, 0, 0, 0};
+struct gameState game = {NULL, '\0', 0, 0, 0};
 
 int 
 main(const int argc, char* argv[]) 
@@ -200,7 +200,8 @@ handleOkay(char* symbol)
 {
     if (game.status != 1) return;
 
-    game.playerSymbol = symbol;
+    char symbolCharacter = *symbol;
+    game.playerSymbol = symbolCharacter;
 }
 
 static void 
@@ -215,6 +216,9 @@ handleGrid(char* coordinates)
         game.nrows = nrows;
         game.ncols = ncols;
         game.status = 3;
+        
+        display_banner(game.playerSymbol, 0, 0, 0); 
+        
         return;
     } 
 

@@ -26,17 +26,20 @@ init_curses(int nrows, int ncols)
 }
 
 void
-display_banner(const char* playerName, int playerNuggets, int unclaimedNuggets, char* additional)
+display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets, char* additional)
 {
+    if (playerSymbol == '\0') {
+        return;
+    }
+    
     move(0, 0);
     clrtoeol();
     
     char banner[200];
-    sprintf(banner, "Player %s has %d nuggets (%d nuggets unclaimed). %s", playerName, playerNuggets, unclaimedNuggets, additional);
+    sprintf(banner, "Player %c has %d nuggets (%d nuggets unclaimed). %s", playerSymbol, playerNuggets, unclaimedNuggets, additional);
     mvprintw(0, 0, "%s", banner);
     
-    refresh();
-    
+    refresh(); 
 }
 
 void 
