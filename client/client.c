@@ -10,8 +10,6 @@
 typedef struct gameState {
     char* playerName;
     char* playerSymbol;
-    int playerGold;
-    int goldRemaining;
     int nrows;
     int ncols;
     int status;
@@ -34,7 +32,7 @@ static void handleDisplay(char* board);
 static void handleQuit(char* explanation);
 static void handleError(char* error);
 
-struct gameState game = {NULL, NULL, 0, 0, 0, 0, 0};
+struct gameState game = {NULL, NULL, 0, 0, 0};
 
 int 
 main(const int argc, char* argv[]) 
@@ -181,7 +179,6 @@ sendKey(addr_t* serverp, char key)
     char message[10]; 
     sprintf(message, "KEY %c", key);
     message_send(*serverp, message);
-    display_banner(game.playerSymbol, game.playerGold, game.goldRemaining, NULL);
 }
 
 static void
@@ -195,7 +192,7 @@ indicateInvalidKey(char key)
     char message[100];
     sprintf(message, "Invalid keystroke %c", key);
     
-    display_banner(game.playerSymbol, game.playerGold, game.goldRemaining, message); 
+    // display message
 }
 
 static void 
@@ -238,14 +235,14 @@ handleGold(char* counts)
     char message[100];
     sprintf(message, "You collected %d nuggets!", collected);
 
-    display_banner(game.playerSymbol, game.playerGold, game.goldRemaining, message); 
+    display_banner(game.playerSymbol, current, remaining, message); 
 }
 
 static void 
 handleDisplay(char* board) 
 {
     if (game.status != 3) return;
-
+    
     display_board(board, game.nrows, game.ncols);
 }
 

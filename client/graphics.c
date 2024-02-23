@@ -39,13 +39,12 @@ display_banner(const char* playerName, int playerNuggets, int unclaimedNuggets, 
     
 }
 
-// TODO: see if this can be done using mods
-void
-display_board(char* board, int nrows, int ncols)
+void 
+display_board(char* board, int nrows, int ncols) 
 {
     int x = 0;
-    int y = 0;
-    
+    int y = 1;
+
     for (int i = 0; i < strlen(board); i++) {
         char c = board[i];
 
@@ -55,15 +54,14 @@ display_board(char* board, int nrows, int ncols)
         }
 
         if (y >= nrows) {
-            clear();
-            x = 0;
-            y = 0;
+            break;
         }
 
         mvaddch(y, x, c);
-        refresh();
         x++;
     }
+
+    refresh();
 }
 
 void
