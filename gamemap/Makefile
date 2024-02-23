@@ -5,7 +5,7 @@
 # Hugo Fang, 2/21/2024
 #
 
-LIB = ../support/support.a
+LIB = gamemap.a
 # TESTS =
 
 CFLAGS = -Wall -pedantic -std=c11 -ggdb
@@ -15,18 +15,23 @@ myvalgrind = valgrind --leak-check=full --show-leak-kinds=all
 
 .PHONY: all test clean
 
-all: gamemaptest
+all: $(LIB) gamemaptest
+
+# library and executables
+$(LIB): gamemap.o file.o
+	ar cr $(LIB) $^
+
+gamemaptest: gamemaptest.o $(LIB)
+	$(CC) $(CFLAGS) $^ -o $@
+
+# objects
+gamemap.o: file.h gamemap.h
+file.o: file.h
 
 test: gamemaptest
 	$(myvalgrind) ./gamemaptest
 
-gamemaptest: gamemaptest.o gamemap.o file.o
-	$(CC) $(CFLAGS) $^ -o $@
-
-gamemap.o: file.h gamemap.h
-file.o: file.h
-
 clean:
-	rm -f gamemaptest gamemap
+	rm -f gamemaptest gamemap.a
 	rm -f core
 	rm -rf *~ *.o *.gch *.dSYM
