@@ -36,10 +36,31 @@ display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets, char*
     clrtoeol();
     
     char banner[200];
-    sprintf(banner, "Player %c has %d nuggets (%d nuggets unclaimed). %s", playerSymbol, playerNuggets, unclaimedNuggets, additional);
+    sprintf(banner, "Player %c has %d nuggets (%d nuggets unclaimed). %s\n", playerSymbol, playerNuggets, unclaimedNuggets, additional);
     mvprintw(0, 0, "%s", banner);
     
     refresh(); 
+}
+
+void 
+append_to_banner(char* message, int ncols) 
+{
+    move(0, 0);
+    
+    int y, x;
+    getyx(stdscr, y, x);
+    
+    char ch;
+    while ((ch = inch()) != '.') {
+        x++;
+        move(y, x);
+    }
+
+    x++;
+    move(y, x);
+
+    printw(" %s", message);
+    refresh();
 }
 
 void 

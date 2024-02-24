@@ -90,7 +90,7 @@ handleInputGeneric(void* server)
         game.status = 1;
         return false;
     } else if (game.status == 1) {
-        sendReceipt(serverp); // for testing
+        sendReceipt(serverp);
         return false;
     } else if (game.status == 3) {
         if (game.playerName == NULL) {
@@ -192,10 +192,12 @@ sendReceipt(addr_t* serverp) {
 static void
 indicateInvalidKey(char key) 
 {
+    if (game.status != 3) return;
+    
     char message[100];
     sprintf(message, "Invalid keystroke %c", key);
     
-    // display message
+    append_to_banner(message, game.ncols);
 }
 
 static void 

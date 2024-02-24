@@ -7,6 +7,8 @@ void display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets, 
 
 void display_board(char* board, int nrows, int ncols);
 
+void append_to_banner(char* message, int ncols);
+
 void end_curses();
 
 #endif
