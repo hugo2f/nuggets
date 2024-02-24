@@ -123,7 +123,10 @@ handleMessage(void* arg, const addr_t from, const char* message)
     
     char messageType[10];
     char remainder[100];
-    sscanf(message, "%s %99[^\n]", messageType, remainder);
+    if (sscanf(message, "%s %99[^\n]", messageType, remainder) != 2) {
+        fprintf(stderr, "Invalid message received");
+        return false;
+    }
     
     if (strcmp(messageType, "OK") == 0) {
         handleOkay(remainder);
@@ -210,7 +213,10 @@ handleGrid(char* coordinates)
     if (game.status != 1) return;
     
     int nrows, ncols;
-    sscanf(coordinates, "%d %d", &nrows, &ncols);
+    if (sscanf(coordinates, "%d %d", &nrows, &ncols) != 2) {
+        fprintf(stderr, "GRID message missing data!");
+        return;
+    }
     
     if (init_curses(nrows, ncols)) {
         game.nrows = nrows;
@@ -234,7 +240,10 @@ handleGold(char* counts)
     if (game.status != 3) return;
     
     int collected, current, remaining;
-    sscanf(counts, "%d %d %d", &collected, &current, &remaining);
+    if (sscanf(counts, "%d %d %d", &collected, &current, &remaining) != 3) {
+        fprintf(stderr, "GOLD message missing data!");
+        return;
+    }
 
     char message[100];
     sprintf(message, "You collected %d nuggets!", collected);
