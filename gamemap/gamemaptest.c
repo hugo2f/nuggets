@@ -12,8 +12,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "gamemap.h"
+
+void displayVisible(GameMap_t* map, int** visibleRegion);
 
 int main(const int argc, char* argv[])
 {
@@ -22,34 +25,36 @@ int main(const int argc, char* argv[])
     return 1;
   }
 
-  /* Load maps and output */
+  GameMap_t* map = NULL;
 
-  // Invalid map
-  GameMap_t* map = loadMapFile("../maps/asdf.txt");
-  printf("asdf.txt: %dx%d\n", getNumRows(map), getNumCols(map));
-  printMap(map);
-  deleteGameMap(map);
+  /* Load maps and output with printGrid vs. gridToString */
 
-  // Valid maps
-  map = loadMapFile("../maps/hole.txt");
-  printf("hole.txt: %dx%d\n", getNumRows(map), getNumCols(map));
-  printMap(map);
-  printf("----------\n");
-  char* gridString = gridToString(map);
-  printf("%s\n", gridString);
-  free(gridString);
-  deleteGameMap(map);
-  printf("----------\n");
+  // // Invalid map
+  // map = loadMapFile("../maps/asdf.txt");
+  // printf("asdf.txt: %dx%d\n", getNumRows(map), getNumCols(map));
+  // printMap(map);
+  // deleteGameMap(map);
 
-  map = loadMapFile("../maps/main.txt");
-  printf("main.txt: %dx%d\n", getNumRows(map), getNumCols(map));
-  printMap(map);
-  printf("----------\n");
-  gridString = gridToString(map);
-  printf("%s\n", gridString);
-  free(gridString);
-  deleteGameMap(map);
-  printf("----------\n");
+  // // Valid maps
+  // map = loadMapFile("../maps/hole.txt");
+  // printf("hole.txt: %dx%d\n", getNumRows(map), getNumCols(map));
+  // printMap(map);
+  // printf("----------\n");
+  // char* gridString = gridToString(map);
+  // printf("%s\n", gridString);
+  // free(gridString);
+  // deleteGameMap(map);
+  // printf("----------\n");
+
+  // map = loadMapFile("../maps/main.txt");
+  // printf("main.txt: %dx%d\n", getNumRows(map), getNumCols(map));
+  // printMap(map);
+  // printf("----------\n");
+  // gridString = gridToString(map);
+  // printf("%s\n", gridString);
+  // free(gridString);
+  // deleteGameMap(map);
+  // printf("----------\n");
 
   // /* get/set/restoreCellType */
 
@@ -113,14 +118,13 @@ int main(const int argc, char* argv[])
   // deleteGameMap(map);
 
   /* getVisibleRegion */
-  map = loadMapFile("../maps/hole.txt");
-  int** visibleRegion = getVisibleRegion(map, 5, 5);
-  int size = 0;
-  for (int row = 0; visibleRegion[row][0] != -1; row++) {
-    printf("%d, %d\n", visibleRegion[row][0], visibleRegion[row][1]);
-    size++;
-  }
-  delete2DIntArr(visibleRegion, size + 1); // +1 for the last (-1, -1) row
+  map = loadMapFile("../maps/big.txt");
+  printf("\ngetVisibleRegion on big.txt (%dx%d)\n", getNumRows(map), getNumCols(map));
+  printMap(map);
+
+  int** visibleRegion = getVisibleRegion(map, 14, 15);
+  displayVisible(map, visibleRegion);
+  deleteGameMap(map);
 
   /* getRoomCells */
   // int** roomCells = getRoomCells(map);
@@ -132,4 +136,34 @@ int main(const int argc, char* argv[])
   // delete2DIntArr(roomCells, size + 1); // +1 for the last (-1, -1) row
 
   return 0;
+}
+
+void displayVisible(GameMap_t* map, int** visibleRegion)
+{
+  int size = 0;
+  int numRows = getNumRows(map), numCols = getNumCols(map);
+  char** grid = malloc(numRows * sizeof(char*));
+  if (grid == NULL) {
+    return;
+  }
+  for (int row = 0; row < numRows; row++) {
+    grid[row] = malloc(numCols * sizeof(char));
+    memset(grid[row], ' ', numCols);
+  }
+
+  for (int row = 0; visibleRegion[row][0] != -1; row++) {
+    // printf("%d, %d\n", visibleRegion[row][0], visibleRegion[row][1]);
+    int visibleRow = visibleRegion[row][0], visibleCol = visibleRegion[row][1];
+    grid[visibleRow][visibleCol] = getCellType(map, visibleRow, visibleCol);
+    size++;
+  }
+  printf("Found %d visible cells\n", size);
+  for (int row = 0; row < numRows; row++) {
+    for (int col = 0; col < numCols; col++) {
+      printf("%c", grid[row][col]);
+    }
+    printf("\n");
+  }
+  deleteGrid(grid, numRows);
+  delete2DIntArr(visibleRegion, size + 1); // +1 for the last (-1, -1) row
 }
