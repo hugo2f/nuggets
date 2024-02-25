@@ -25,7 +25,7 @@ gamemaptest: gamemaptest.o $(LIB)
 	$(CC) $(CFLAGS) $^ -o $@
 
 # objects
-gamemap.o: file.h gamemap.h
+gamemap.o: gamemap.h file.h
 file.o: file.h
 
 test: gamemaptest
