@@ -54,6 +54,7 @@ char** getGameGrid(GameMap_t* map)
 
 // Helper functions
 static void deleteGrid(char** grid, int numRows);
+void delete2DIntArr(int** arr, int numRows);
 
 GameMap_t* loadMapFile(char* mapFilePath)
 {
@@ -163,6 +164,59 @@ int** getVisibleRegion(GameMap_t* map, int row, int col)
 {
   // TODO
   return NULL;
+}
+
+int** getRoomCells(GameMap_t* map)
+{
+  if (map == NULL) {
+    return NULL;
+  }
+
+  // at most room size x 2 if every cell is room cell, +1 for (-1, -1)
+  // to mark the end of the array
+  int totalLength = map->numRows * map->numCols + 1;
+  int** res = malloc(totalLength * sizeof(int*));
+  if (res == NULL) {
+    return NULL;
+  }
+
+  int idx = 0;
+  // each row will have 2 ints
+  res[0] = malloc(2 * sizeof(int));
+  if (res[0] == NULL) {
+    return NULL;
+  }
+
+  // loop through the room
+  for (int row = 0; row < map->numRows; row++) {
+    for (int col = 0; col < map->numCols; col++) {
+      if (map->grid[row][col] == '.') {
+        res[idx][0] = row;
+        res[idx++][1] = col;
+
+        // malloc the next row
+        res[idx] = malloc(2 * sizeof(int));
+        if (res[idx] == NULL) {
+          delete2DIntArr(res, totalLength * sizeof(int*));
+          return NULL;
+        }
+      }
+    }
+  }
+  res[idx][0] = -1;
+  res[idx][1] = -1;
+  return res;
+}
+
+void delete2DIntArr(int** arr, int numRows)
+{
+  if (arr == NULL) {
+    return;
+  }
+  for (int row = 0; row < numRows; row++) {
+    free(arr[row]);
+  }
+  free(arr);
 }
 
 void printMap(GameMap_t* map)

@@ -7,8 +7,8 @@
  * Hugo Fang, 2/21/2024
  */
 
-#ifndef __GameMap_t_H__
-#define __GameMap_t_H__
+#ifndef __GameMap_H__
+#define __GameMap_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -96,12 +96,44 @@ void restoreCell(GameMap_t* map, int row, int col);
  *   row, col: starting coordinate
  * 
  * Returns:
- *   2D numRows x numCols array of visible coordinates,
- *     terminated by (-1, -1)
+ *   2D nx2 array of visible coordinates, terminated by (-1, -1)
  * 
  * Caller needs to later call deleteGrid on the returned pointer
  */
 int** getVisibleRegion(GameMap_t* map, int row, int col);
+
+/*
+ * Return an array of room cell ('.') coordinates
+ *
+ * Inputs:
+ *   map: GameMap_t*
+ * 
+ * Returns:
+ *   2D nx2 array of coordinates, terminated by (-1, -1)
+ *   NULL if map is NULL or memory allocation error
+ * 
+ * Example:
+    int** roomCells = getRoomCells(map);
+    int size = 0;
+    for (int row = 0; roomCells[row][0] != -1; row++) {
+      printf("%d, %d\n", roomCells[row][0], roomCells[row][1]);
+      size++;
+    }
+    delete2DIntArr(roomCells, size + 1); // +1 for the (-1, -1) row
+ * 
+ * Caller needs to later call deleteGrid on the returned pointer
+ */
+int** getRoomCells(GameMap_t* map);
+
+/*
+ * Equivalent of deleteGrid, but for a 2d int array.
+ * Helper function to free the 2d array returned by getRoomCells
+ * 
+ * Inputs:
+ *   arr to delete
+ *   numRows in arr
+ */
+void delete2DIntArr(int** arr, int numRows);
 
 /*
  * Print out a map (for testing)
@@ -128,4 +160,4 @@ void printMap(GameMap_t* map);
  */
 char* gridToString(GameMap_t* map);
 
-#endif // __GameMap_t_H__
+#endif // __GameMap_H__

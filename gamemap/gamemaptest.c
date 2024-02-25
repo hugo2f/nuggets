@@ -38,6 +38,14 @@ int main(const int argc, char* argv[])
   printf("------\n");
   char* gridString = gridToString(map);
   printf("%s\n", gridString);
+
+  int** roomCells = getRoomCells(map);
+  int size = 0;
+  for (int row = 0; roomCells[row][0] != -1; row++) {
+    printf("%d, %d\n", roomCells[row][0], roomCells[row][1]);
+    size++;
+  }
+  delete2DIntArr(roomCells, size + 1); // +1 for the (-1, -1) row
   free(gridString);
   deleteGameMap(map);
 
