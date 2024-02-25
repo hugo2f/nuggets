@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "file.h"
 
@@ -16,6 +17,12 @@ typedef struct GameMap {
   char** grid; // terrain features
   char** gameGrid; // spectator view with players and gold
 } GameMap_t;
+
+/* Local consts */
+// directions for changes in coordinates,
+// starting with right and in clockwise order
+static const int dr[] = {0, 1, 0, -1};
+static const int dc[] = {1, 0, -1, 0};
 
 /* Local functions */
 
@@ -55,6 +62,8 @@ char** getGameGrid(GameMap_t* map)
 // Helper functions
 static void deleteGrid(char** grid, int numRows);
 void delete2DIntArr(int** arr, int numRows);
+static bool outOfMap(GameMap_t* map, int row, int col);
+static bool isWall(char type);
 
 GameMap_t* loadMapFile(char* mapFilePath)
 {
@@ -138,7 +147,7 @@ void deleteGrid(char** grid, int numRows)
 
 char getCellType(GameMap_t* map, int row, int col)
 {
-  if (row < 0 || row >= map->numRows || col < 0 || col >= map->numCols) {
+  if (outOfMap(map, row, col)) {
     return '\0';
   }
   return map->grid[row][col];
@@ -146,7 +155,14 @@ char getCellType(GameMap_t* map, int row, int col)
 
 void setCellType(GameMap_t* map, char type, int row, int col)
 {
-  if (row < 0 || row >= map->numRows || col < 0 || col >= map->numCols) {
+  // invalid coordinates
+  if (outOfMap(map, row, col)) {
+    return;
+  }
+
+  // can't change a wall or solid rock to another type
+  char curType = map->grid[row][col];
+  if (curType == '+' || curType == '-' || curType == '|' || curType == ' ') {
     return;
   }
   map->gameGrid[row][col] = type;
@@ -154,7 +170,7 @@ void setCellType(GameMap_t* map, char type, int row, int col)
 
 void restoreCell(GameMap_t* map, int row, int col)
 {
-  if (row < 0 || row >= map->numRows || col < 0 || col >= map->numCols) {
+  if (outOfMap(map, row, col)) {
     return;
   }
   map->gameGrid[row][col] = map->grid[row][col];
@@ -162,8 +178,42 @@ void restoreCell(GameMap_t* map, int row, int col)
 
 int** getVisibleRegion(GameMap_t* map, int row, int col)
 {
-  // TODO
-  return NULL;
+  // parameter checks
+  if (map == NULL || outOfMap(map, row, col)) {
+    return NULL;
+  }
+
+  // a player would can only be at a room ('.') or passage cell ('#')
+  char type = getCellType(map, row, col);
+  int** res = NULL;
+  if (type == '.') { // in room
+    // at most map size x 2 if every cell is visible, +1 for (-1, -1)
+    // to mark the end of the array
+    int totalLength = map->numRows * map->numCols + 1;
+    int** res = malloc(totalLength * sizeof(int*));
+    // TODO
+  } else if (type == '#') { // in passage
+    // only look at 4 adjacent cells
+
+    int** res = malloc(5 * sizeof(int*));
+    
+    for (int i = 0; i < 3; i++) {
+      int newRow = row + dr[i];
+      int newCol = col + dr[i];
+      if (outOfMap(map, newRow, newCol)) {
+        continue;
+      }
+      res[i][0] = newRow;
+      res[i][1] = newCol;
+    }
+    // mark end of array
+    res[4][0] = -1;
+    res[4][1] = -1;
+  } else {
+    return NULL;
+  }
+
+  return res;
 }
 
 int** getRoomCells(GameMap_t* map)
@@ -172,7 +222,7 @@ int** getRoomCells(GameMap_t* map)
     return NULL;
   }
 
-  // at most room size x 2 if every cell is room cell, +1 for (-1, -1)
+  // at most map size x 2 if every cell is room cell, +1 for (-1, -1)
   // to mark the end of the array
   int totalLength = map->numRows * map->numCols + 1;
   int** res = malloc(totalLength * sizeof(int*));
@@ -228,7 +278,7 @@ void printMap(GameMap_t* map)
 
   for (int row = 0; row < map->numRows; row++) {
     for (int col = 0; col < map->numCols; col++) {
-      printf("%c", map->grid[row][col]);
+      printf("%c", map->gameGrid[row][col]);
     }
     printf("\n");
   }
@@ -255,4 +305,25 @@ char* gridToString(GameMap_t* map)
   }
   res[totalLength - 1] = '\0';
   return res;
+}
+
+/*
+ * Helper function to validate a coordinate in a map
+ *
+ * Inputs:
+ *   map to validate with
+ *   row, col: coordinates
+ * 
+ * Returns:
+ *   true if outside map
+ *   false if in map
+ */
+bool outOfMap(GameMap_t* map, int row, int col)
+{
+  return (row < 0 || row >= map->numRows || col < 0 || col >= map->numCols);
+}
+
+bool isWall(char type)
+{
+  return (type == '+' || type == '-' || type == '|');
 }

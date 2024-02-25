@@ -97,6 +97,7 @@ void restoreCell(GameMap_t* map, int row, int col);
  * 
  * Returns:
  *   2D nx2 array of visible coordinates, terminated by (-1, -1)
+ *   NULL if map is NULL or invalid coordinates (not in map, not a room or passage cell)
  * 
  * Caller needs to later call deleteGrid on the returned pointer
  */
