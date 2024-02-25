@@ -16,7 +16,7 @@
 
 #include "gamemap.h"
 
-void displayVisible(GameMap_t* map, int** visibleRegion);
+void displayVisible(GameMap_t* map, int** visibleRegion, int startRow, int startCol);
 
 int main(const int argc, char* argv[])
 {
@@ -118,12 +118,18 @@ int main(const int argc, char* argv[])
   // deleteGameMap(map);
 
   /* getVisibleRegion */
-  map = loadMapFile("../maps/big.txt");
-  printf("\ngetVisibleRegion on big.txt (%dx%d)\n", getNumRows(map), getNumCols(map));
+  map = loadMapFile("../maps/hole.txt");
+  printf("\ngetVisibleRegion on hole.txt (%dx%d)\n", getNumRows(map), getNumCols(map));
   printMap(map);
 
-  int** visibleRegion = getVisibleRegion(map, 14, 15);
-  displayVisible(map, visibleRegion);
+  while (1) {
+    int row, col;
+    if (scanf("%d %d", &row, &col) == EOF) {
+      break;
+    }
+    int** visibleRegion = getVisibleRegion(map, row, col);
+    displayVisible(map, visibleRegion, row, col);
+  }
   deleteGameMap(map);
 
   /* getRoomCells */
@@ -138,14 +144,19 @@ int main(const int argc, char* argv[])
   return 0;
 }
 
-void displayVisible(GameMap_t* map, int** visibleRegion)
+void displayVisible(GameMap_t* map, int** visibleRegion, int startRow, int startCol)
 {
+  if (visibleRegion == NULL) {
+    printf("nothing found\n");
+    return;
+  }
   int size = 0;
   int numRows = getNumRows(map), numCols = getNumCols(map);
   char** grid = malloc(numRows * sizeof(char*));
   if (grid == NULL) {
     return;
   }
+
   for (int row = 0; row < numRows; row++) {
     grid[row] = malloc(numCols * sizeof(char));
     memset(grid[row], ' ', numCols);
@@ -157,6 +168,8 @@ void displayVisible(GameMap_t* map, int** visibleRegion)
     grid[visibleRow][visibleCol] = getCellType(map, visibleRow, visibleCol);
     size++;
   }
+  
+  grid[startRow][startCol] = '@';
   printf("Found %d visible cells\n", size);
   for (int row = 0; row < numRows; row++) {
     for (int col = 0; col < numCols; col++) {
