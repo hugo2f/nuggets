@@ -45,7 +45,8 @@ void initializeGame();
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 void callCommand(char key);
 void sendGridToClient(player_t* player);
-player_t* playerHasJoined(addr_t address);
+player_t* playerJoin(addr_t address, char* name);
+player_t* checkPlayerJoined(addr_t address);
 
 int 
 main(int argc, char* argv[])
@@ -109,7 +110,8 @@ static bool
 handleMessage(void* arg, const addr_t from, const char* message)
 {
   char command[10]; //store the command
-  char name[100];
+  char* name = malloc(100 * sizeof(char));
+  char* okMessage = malloc(10 * sizeof(char)); //used to store message that contains client's charID (sent to client)
 
   //TO DO:
   /*
@@ -118,17 +120,25 @@ handleMessage(void* arg, const addr_t from, const char* message)
    * 
    */
 
-  player_t* player = playerHasJoined(from); 
+  player_t* player;
   if (sscanf(message, "PLAY %s", name) == 1) {
-    player->name = name;
+    player = playerJoin(from, name); 
     printf("%s joined the game with an id %c\n", player->name, player->characterID);
+    sprintf(okMessage, "OK %c", player->characterID);
+    message_send(player->playerAddress, okMessage);
     sendGridToClient(player);
   } else if (sscanf(message, "KEY %s", command) == 1) {
+    player = checkPlayerJoined(from); 
+    if (player == NULL) {
+      return false; //don't do anything -- keep running
+    }
     char key = command[0];
     printf("received key %c from %s\n", key, player->name);
     callCommand(key);
   } else {
-    //printf("Invalid message format: %s\n", message);
+    char invalidMessage[100];
+    sprintf(invalidMessage, "Invalid message format: %s", message);
+    message_send(from, invalidMessage);
   }
   //server keeps running
   return false;
@@ -214,18 +224,19 @@ sendGridToClient(player_t* player)
 
   //send the actual grid to the client
   char** grid = getGrid(game->map);
-  int size = numRows * (numCols + 1) + 10;
+  int size = strlen("DISPLAY ") + numRows * (numCols + 1) + 10;
   char* gridMessage = malloc(size * sizeof(char));
   if (gridMessage == NULL) {
     return;
   }
   strcpy(gridMessage, "DISPLAY ");
+  int pos = strlen(gridMessage);
   for (int i = 0; i < numRows; i++) {
     for (int j = 0; j < numCols; j++) {
-      char temp[2] = {grid[i][j], '\0'}; // convert char to string so we can concatenate
-      strcat(gridMessage, temp);
+      gridMessage[pos++] = grid[i][j];
     }
   }
+  gridMessage[pos] = '\0';
   message_send(player->playerAddress, gridMessage);
 
   //free pointers
@@ -235,24 +246,13 @@ sendGridToClient(player_t* player)
 
 
 /*
- * Check if a player has already joined the game before
- * If they have, return that player
+ * Create a new player and add it to the array of players
  */
 
 player_t*
-playerHasJoined(addr_t address) 
+playerJoin(addr_t address, char* name) 
 {
-  //check if the player has already joined the gmae
-  for (int i = 0; i < game->currentNumPlayers; i++) {
-    printf("here\n");
-    player_t* player = game->players[i];
-    addr_t playerAddress = player->playerAddress;
-    if (message_eqAddr(playerAddress, address)) {
-      printf("addresses are equal\n");
-      return player;
-    }
-  }
-  //player has not joined, create their player and add them to the game
+  //create the player and add them to the game
   int currentNumPlayers = game->currentNumPlayers;
   player_t* newPlayer = malloc(sizeof(player_t));
   if (newPlayer == NULL) {
@@ -262,9 +262,11 @@ playerHasJoined(addr_t address)
   if (currentNumPlayers < MaxPlayers) {
     //TO DO: INITIALIZE ATTRIBUTES OF PLAYER
     char id = 'A' + game->currentNumPlayers;
-    newPlayer->characterID = id;
-    newPlayer->playerAddress = address;
-    game->players[currentNumPlayers] = newPlayer;
+    newPlayer->characterID = id; //set id
+    newPlayer->name = name; //set name
+    newPlayer->playerAddress = address; //set address
+    newPlayer->playerMap = game->map; //set map (SPECTATOR VIEW FOR NOW)
+    game->players[currentNumPlayers] = newPlayer; //add to array
     game->currentNumPlayers++;
     printf("new player has been added\n");
   } else {
@@ -275,6 +277,22 @@ playerHasJoined(addr_t address)
   return newPlayer;
 }
 
+/*
+ * Check if a player exists, if they do then return that player
+ */
 
-
+player_t* 
+checkPlayerJoined(addr_t address) 
+{
+  //check if the player has already joined the gmae
+  for (int i = 0; i < game->currentNumPlayers; i++) {
+    player_t* player = game->players[i];
+    addr_t playerAddress = player->playerAddress;
+    if (message_eqAddr(playerAddress, address)) {
+      printf("addresses are equal\n");
+      return player;
+    }
+  }
+  return NULL;
+}
 
