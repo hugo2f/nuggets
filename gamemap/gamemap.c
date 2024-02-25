@@ -191,14 +191,11 @@ int** getVisibleRegion(GameMap_t* map, int row, int col)
   char type = getCellType(map, row, col);
   int** visibleRegion = NULL;
   int totalLength = 0;
-  if (type == '.') {
-    // at most map size x 2 if every cell is visible, +1 for (-1, -1)
-    // to mark the end of the array
-    totalLength = map->numRows * map->numCols + 1;
-  } else if (type == '#') {
-    // 3x3 cells around player, 1 for terminating (-1, -1)
-    totalLength = 10;
-  } else {
+  // at most map size x 2 if every cell is visible, +1 for (-1, -1)
+  // to mark the end of the array
+  totalLength = map->numRows * map->numCols + 1;
+
+  if (type != '.' && type != '#') {
     return NULL;
   }
 
@@ -216,20 +213,11 @@ int** getVisibleRegion(GameMap_t* map, int row, int col)
   visibleRegion[0][1] = col;
   int idx = 1; // start filling in later visible cells from 1
   int found = 1; // visible cells found in the previous checkSquare call
-  if (type == '.') { // room
-    // expand radius to check until no new visible cells are found
-    for (int radius = 1; found > 0; radius++) {
-      // check square around (row, col) of `radius`
-      found = checkSquare(map, visibleRegion, idx, row, col, radius);
-      // checkSquare returns -1 on memory allocation error
-      if (found == -1) {
-        delete2DIntArr(visibleRegion, totalLength);
-      }
-      idx += found;
-    }
-  } else {
-    // passage: only check 3x3 around the player (radius 1)
-    found = checkSquare(map, visibleRegion, idx, row, col, 1);
+  // expand radius to check until no new visible cells are found
+  for (int radius = 1; found > 0; radius++) {
+    // check square around (row, col) of `radius`
+    found = checkSquare(map, visibleRegion, idx, row, col, radius);
+    // checkSquare returns -1 on memory allocation error
     if (found == -1) {
       delete2DIntArr(visibleRegion, totalLength);
     }
@@ -243,75 +231,6 @@ int** getVisibleRegion(GameMap_t* map, int row, int col)
   }
   visibleRegion[idx][0] = -1;
   visibleRegion[idx][1] = -1;
-
-  // if (type == '.') { // in room
-  //   // at most map size x 2 if every cell is visible, +1 for (-1, -1)
-  //   // to mark the end of the array
-  //   int totalLength = map->numRows * map->numCols + 1;
-  //   visibleRegion = malloc(totalLength * sizeof(int*));
-  //   if (visibleRegion == NULL) {
-  //     return NULL;
-  //   }
-    
-  //   // player is always on visible spot
-  //   visibleRegion[0] = malloc(2 * sizeof(int));
-  //   if (visibleRegion[0] == NULL) {
-  //     return NULL;
-  //   }
-  //   visibleRegion[0][0] = row;
-  //   visibleRegion[0][1] = col;
-  //   int idx = 1; // start filling in later visible cells from 1
-
-  //   // expand radius to check until no new visible cells are found
-  //   int found = 1;
-  //   int limit = 0; // limit of sight radius
-  //   for (int radius = 1; radius <= limit && found > 0; radius++) {
-  //     // check square around (row, col) of `radius`
-  //     found = checkSquare(map, visibleRegion, idx, row, col, radius);
-  //     // checkSquare returns -1 on memory allocation error
-  //     if (found == -1) {
-  //       delete2DIntArr(visibleRegion, totalLength);
-  //     }
-  //     idx += found;
-  //   }
-
-  //   visibleRegion[idx] = malloc(2 * sizeof(int));
-  //   if (visibleRegion[idx] == NULL) {
-  //     delete2DIntArr(visibleRegion, totalLength);
-  //     return NULL;
-  //   }
-  //   visibleRegion[idx][0] = -1;
-  //   visibleRegion[idx][1] = -1;
-  // } else if (type == '#') { // in passage
-  //   // only look at 4 adjacent cells
-  //   // visibleRegion = malloc(6 * sizeof(int*));
-    
-  //   // for (int i = 0; i < 4; i++) {
-  //   //   int newRow = row + dr[i];
-  //   //   int newCol = col + dc[i];
-  //   //   if (outOfMap(map, newRow, newCol)) {
-  //   //     continue;
-  //   //   }
-  //   //   visibleRegion[i] = malloc(2 * sizeof(char));
-  //   //   if (visibleRegion[i] == NULL) {
-  //   //     delete2DIntArr(visibleRegion, 5);
-  //   //     return NULL;
-  //   //   }
-  //   //   visibleRegion[i][0] = newRow;
-  //   //   visibleRegion[i][1] = newCol;
-  //   // }
-  //   // // mark end of array
-  //   // visibleRegion[4] = malloc(2 * sizeof(char));
-  //   // if (visibleRegion[4] == NULL) {
-  //   //   delete2DIntArr(visibleRegion, 5);
-  //   //   return NULL;
-  //   // }
-  //   // visibleRegion[4][0] = -1;
-  //   // visibleRegion[4][1] = -1;
-  // } else {
-  //   return NULL;
-  // }
-
   return visibleRegion;
 }
 
