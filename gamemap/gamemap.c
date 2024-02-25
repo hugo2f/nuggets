@@ -62,7 +62,8 @@ char** getGameGrid(GameMap_t* map)
 // Helper functions
 void deleteGrid(char** grid, int numRows);
 void delete2DIntArr(int** arr, int numRows);
-static int checkSquare(GameMap_t* map, int** visibleRegion, int idx, int row, int col, int radius);
+int checkSquare(GameMap_t* map, int** visibleRegion, int idx,
+                int row, int col, int radius);
 static bool isVisible(GameMap_t* map, int r1, int c1, int r2, int c2);
 static bool outOfMap(GameMap_t* map, int row, int col);
 static bool isWall(char type);
@@ -186,32 +187,30 @@ int** getVisibleRegion(GameMap_t* map, int row, int col)
   if (map == NULL || outOfMap(map, row, col)) {
     return NULL;
   }
-
-  // a player would can only be at a room ('.') or passage cell ('#')
+  // a player would can only be in a room ('.') or passage cell ('#')
   char type = getCellType(map, row, col);
-  int** visibleRegion = NULL;
-  int totalLength = 0;
-  // at most map size x 2 if every cell is visible, +1 for (-1, -1)
-  // to mark the end of the array
-  totalLength = map->numRows * map->numCols + 1;
-
   if (type != '.' && type != '#') {
     return NULL;
   }
 
+  int** visibleRegion = NULL;
+  // at most map size x 2 if every cell is visible, +1 for (-1, -1)
+  // to mark the end of the array
+  int totalLength = map->numRows * map->numCols + 1;
   visibleRegion = malloc(totalLength * sizeof(int*));
   if (visibleRegion == NULL) {
     return NULL;
   }
 
-  // the player is always on visible spot
-  visibleRegion[0] = malloc(2 * sizeof(int));
-  if (visibleRegion[0] == NULL) {
-    return NULL;
-  }
-  visibleRegion[0][0] = row;
-  visibleRegion[0][1] = col;
-  int idx = 1; // start filling in later visible cells from 1
+  // TODO: delete after testing
+  // // the player is always on visible spot
+  // visibleRegion[0] = malloc(2 * sizeof(int));
+  // if (visibleRegion[0] == NULL) {
+  //   return NULL;
+  // }
+  // visibleRegion[0][0] = row;
+  // visibleRegion[0][1] = col;
+  int idx = 0; // start filling in later visible cells from 1
   int found = 1; // visible cells found in the previous checkSquare call
   // expand radius to check until no new visible cells are found
   for (int radius = 1; found > 0; radius++) {
@@ -249,7 +248,8 @@ int** getVisibleRegion(GameMap_t* map, int row, int col)
  *   number of visible cells found
  *   -1 if memory allocation error
  */
-int checkSquare(GameMap_t* map, int** visibleRegion, int idx, int row, int col, int radius)
+int checkSquare(GameMap_t* map, int** visibleRegion, int idx,
+                int row, int col, int radius)
 {
   if (map == NULL || visibleRegion == NULL || outOfMap(map, row, col)) {
     return 0;
@@ -303,6 +303,7 @@ bool isVisible(GameMap_t* map, int r1, int c1, int r2, int c2)
     return false;
   }
 
+  // TODO: delete prints after system testing
   // printf("start: %d, %d, end: %d, %d\n", r1, c1, r2, c2);
   int rowDiff = r2 - r1, colDiff = c2 - c1;
   int minRow, maxRow;
@@ -316,14 +317,14 @@ bool isVisible(GameMap_t* map, int r1, int c1, int r2, int c2)
   // printf("intermediate rows\n");
   // for each intermediate row
   for (int row = minRow + 1; row < maxRow; row++) {
-    // ray intersects exactly on a grid
+    // line between start and target cell intersects exactly on a col
     if (((row - r1) * colDiff) % rowDiff == 0) {
       int col = (row - r1) * colDiff / rowDiff + c1;
       // printf("exactly: %d, %d\n", row, col);
       if (map->grid[row][col] != '.') {
         return false;
       }
-    } else { // ray is between two columns
+    } else { // line is between two columns
       // get col when the ray reaches `row`
       double col = (double) (row - r1) * colDiff / rowDiff + c1;
       // printf("not exactly: %d, %f\n", row, col);

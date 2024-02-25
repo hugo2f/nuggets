@@ -163,7 +163,6 @@ void displayVisible(GameMap_t* map, int** visibleRegion, int startRow, int start
   }
 
   for (int row = 0; visibleRegion[row][0] != -1; row++) {
-    // printf("%d, %d\n", visibleRegion[row][0], visibleRegion[row][1]);
     int visibleRow = visibleRegion[row][0], visibleCol = visibleRegion[row][1];
     grid[visibleRow][visibleCol] = getCellType(map, visibleRow, visibleCol);
     size++;

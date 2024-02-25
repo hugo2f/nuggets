@@ -99,6 +99,25 @@ void restoreCell(GameMap_t* map, int row, int col);
  *   2D nx2 array of visible coordinates, terminated by (-1, -1)
  *   NULL if map is NULL or invalid coordinates (not in map, not a room or passage cell)
  * 
+ * Example: create map containing only visible cells
+      int** visibleRegion = getVisibleRegion(map, 10, 10);
+      int size = 0;
+      int numRows = getNumRows(map), numCols = getNumCols(map);
+      char** grid = malloc(numRows * sizeof(char*));
+      if (grid == NULL) {
+        return;
+      }
+
+      for (int row = 0; row < numRows; row++) {
+        grid[row] = malloc(numCols * sizeof(char));
+        memset(grid[row], ' ', numCols);
+      }
+
+      for (int row = 0; visibleRegion[row][0] != -1; row++) {
+        int visibleRow = visibleRegion[row][0], visibleCol = visibleRegion[row][1];
+        grid[visibleRow][visibleCol] = getCellType(map, visibleRow, visibleCol);
+        size++;
+      }
  * Caller needs to later call deleteGrid on the returned pointer
  */
 int** getVisibleRegion(GameMap_t* map, int row, int col);
@@ -113,14 +132,14 @@ int** getVisibleRegion(GameMap_t* map, int row, int col);
  *   2D nx2 array of coordinates, terminated by (-1, -1)
  *   NULL if map is NULL or memory allocation error
  * 
- * Example:
-    int** roomCells = getRoomCells(map);
-    int size = 0;
-    for (int row = 0; roomCells[row][0] != -1; row++) {
-      printf("%d, %d\n", roomCells[row][0], roomCells[row][1]);
-      size++;
-    }
-    delete2DIntArr(roomCells, size + 1); // +1 for the (-1, -1) row
+ * Example: print out all room cell coordinates
+      int** roomCells = getRoomCells(map);
+      int size = 0;
+      for (int row = 0; roomCells[row][0] != -1; row++) {
+        printf("%d, %d\n", roomCells[row][0], roomCells[row][1]);
+        size++;
+      }
+      delete2DIntArr(roomCells, size + 1); // +1 for the (-1, -1) row
  * 
  * Caller needs to later call deleteGrid on the returned pointer
  */
