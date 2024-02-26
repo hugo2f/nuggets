@@ -165,19 +165,4 @@ void delete2DIntArr(int** arr, int numRows);
  */
 void printMap(GameMap_t* map);
 
-/*
- * Convert a GameMap_t.gameGrid into a string. The string will
- * contain a newline after every row, with last row terminated by '\0'
- *
- * Inputs:
- *   map to convert with
- * 
- * Returns:
- *   char* string of converted gameGrid
- *   NULL if map is NULL
- * 
- * Caller needs to free the returned pointer
- */
-char* gridToString(GameMap_t* map);
-
 #endif // __GameMap_H__

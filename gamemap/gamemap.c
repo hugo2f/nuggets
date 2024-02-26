@@ -440,29 +440,6 @@ void printMap(GameMap_t* map)
   }
 }
 
-char* gridToString(GameMap_t* map)
-{
-  if (map == NULL) {
-    return NULL;
-  }
-
-  int numRows = map->numRows, numCols = map->numCols;
-  int totalLength = numRows * (numCols + 1);
-  char* res = malloc(totalLength * sizeof(char));
-  if (res == NULL) {
-    return NULL;
-  }
-
-  int curIdx = 0;
-  for (int row = 0; row < numRows; row++) {
-    strncpy(&res[curIdx], map->gameGrid[row], numCols);
-    curIdx += numCols;
-    res[curIdx++] = '\n';
-  }
-  res[totalLength - 1] = '\0';
-  return res;
-}
-
 /*
  * Helper function to validate a coordinate in a map
  *

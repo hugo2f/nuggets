@@ -119,6 +119,7 @@ int main(const int argc, char* argv[])
 
   /* getVisibleRegion */
   map = loadMapFile("../maps/hole.txt");
+  // map = loadMapFile("./temporary.txt");
   printf("\ngetVisibleRegion on hole.txt (%dx%d)\n", getNumRows(map), getNumCols(map));
   printMap(map);
 
