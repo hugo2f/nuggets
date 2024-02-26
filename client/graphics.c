@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <signal.h>
 #include <ncurses.h>
 
 bool
@@ -10,7 +11,7 @@ init_curses(int nrows, int ncols)
     initscr();
     int nrowsScreen, ncolsScreen;
     getmaxyx(stdscr, nrowsScreen, ncolsScreen);
-
+    
     if (nrows >= nrowsScreen || ncols >= ncolsScreen) {
         return false;
     }
