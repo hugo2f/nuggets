@@ -78,6 +78,11 @@ char getCharacterID(user)
 {
   return user->characterID;
 }
+
+bool user_isActive(user)
+{
+  return user->active;
+}
 /*
 static void moveLeft(user_t* user, GameMap_t* grid)
 {
@@ -95,7 +100,7 @@ static void moveRight(user_t* user, GameMap_t* grid)
   if(user != NULL && ((user->col)+1) <= 50 ){
     if(getCellType(grid, user->row, user->col +1) == '#' ||getCellType(grid, user->row, user->col +1) == '.'  ||getCellType(grid, user->row, user->col +1)  == '*' ){
       setCellType(grid, user->characterID, user->row, (user->col)+1);
-      setCellType(grid, '.', user->row, (user->col));
+      retoreCell(grid, user->row, (user->col));
       user->col = user->col + 1;
     }
   }
@@ -106,7 +111,7 @@ static void moveLeft(user_t* user, GameMap_t* grid)
   if(user != NULL && ((user->col)-1) >= 0 ){
     if(getCellType(grid, user->row, user->col - 1) == '#' ||getCellType(grid, user->row, user->col - 1) == '.'  ||getCellType(grid, user->row, user->col - 1)  == '*' ){
       setCellType(grid, user->characterID, user->row, (user->col)-1);
-      setCellType(grid, '.', user->row, (user->col));
+      restoreCell(grid, user->row, (user->col));
       user->col = user->col - 1;
     }
   }
@@ -117,7 +122,7 @@ static void moveUp(user_t* user, GameMap_t* grid)
   if(user != NULL && ((user->row)-1) >= 0 ){
     if(getCellType(grid, user->row-1, user->col) == '#' ||getCellType(grid, user->row-1, user->col) == '.'  ||getCellType(grid, user->row-1, user->col)  == '*' ){
       setCellType(grid, user->characterID, user->row -1 , (user->col));
-      setCellType(grid, '.', user->row, (user->col));
+      restoreCell(grid, user->row, (user->col));
       user->row = user->row - 1;
     }
   }
@@ -128,7 +133,7 @@ static void moveDown(user_t* user, GameMap_t* grid)
   if(user != NULL && ((user->row)+1) <= 50 ){
     if(getCellType(grid, user->row+1, user->col) == '#' ||getCellType(grid, user->row+1, user->col) == '.'  ||getCellType(grid, user->row+1, user->col)  == '*' ){
       setCellType(grid, user->characterID, user->row + 1 , (user->col));
-      setCellType(grid, '.', user->row, (user->col));
+      restoreCell(grid, user->row, (user->col));
       user->row = user->row + 1;
     }
   }
@@ -136,5 +141,256 @@ static void moveDown(user_t* user, GameMap_t* grid)
 
 
 
-static void moveUp(user_t* user, GameMap* map);
-static void moveDown(user_t* user, GameMap* map);
+static void moveUpLeft(user_t* user, GameMap* map)
+{
+  if(user != NULL && ((user->row)-1)>=0 && (user->col) - 1 >=0){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row -1, user->col -1) == '#' ||getCellType(grid, user->row -1, user->col -1) == '.'  ||getCellType(grid, user->row -1, user->col -1 )  == '*' ){
+        setCellType(grid, user->characterID, user->row - 1 , (user->col)-1);
+        restoreCell(grid, user->row, (user->col));
+        user->row = user->row - 1;
+        user->col - user->col - 1;
+      }
+    }
+  }
+}
+static void moveUpRight(user_t* user, GameMap* map)
+{
+  if(user != NULL && ((user->row)-1)>=0 && (user->col) - 1 >=0){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row -1, user->col -1) == '#' ||getCellType(grid, user->row -1, user->col -1) == '.'  ||getCellType(grid, user->row -1, user->col -1 )  == '*' ){
+        setCellType(grid, user->characterID, user->row - 1 , (user->col)-1);
+        restoreCell(grid, user->row, (user->col));
+        user->row = user->row - 1;
+        user->col - user->col - 1;
+      }
+    }
+  }
+}
+static void moveUpLeft(user_t* user, GameMap* map)
+{
+  if(user != NULL && ((user->row)-1)>=0 && (user->col) - 1 >=0){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row -1, user->col -1) == '#' ||getCellType(grid, user->row -1, user->col -1) == '.'  ||getCellType(grid, user->row -1, user->col -1 )  == '*' ){
+        setCellType(grid, user->characterID, user->row - 1 , (user->col)-1);
+        restoreCell(grid, user->row, (user->col));
+        user->row = user->row - 1;
+        user->col - user->col - 1;
+      }
+    }
+  }
+}
+static void moveUpLeft(user_t* user, GameMap* map)
+{
+  if(user != NULL && ((user->row)-1)>=0 && (user->col) - 1 >=0){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row -1, user->col -1) == '#' ||getCellType(grid, user->row -1, user->col -1) == '.'  ||getCellType(grid, user->row -1, user->col -1 )  == '*' ){
+        setCellType(grid, user->characterID, user->row - 1 , (user->col)-1);
+        restoreCell(grid, user->row, (user->col));
+        user->row = user->row - 1;
+        user->col - user->col - 1;
+      }
+    }
+  }
+}
+static void moveDownLeft(user_t* user, GameMap* map)
+{
+  if(user != NULL && ((user->row)+1)<=50 && (user->col) - 1 >=0){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row +1, user->col -1) == '#' ||getCellType(grid, user->row +1, user->col -1) == '.'  ||getCellType(grid, user->row +1, user->col -1 )  == '*' ){
+        setCellType(grid, user->characterID, user->row + 1 , (user->col)-1);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row + 1;
+        user->col - user->col - 1;
+      }
+    }
+  }
+} 
+
+moveDownRight(user_t* user, GameMap* map, user_t* users[])
+{
+  if(user != NULL && ((user->row)+1) <=50 && ((user->col) +1 ) <=50){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row +1, user->col +1) == '#' ||
+          getCellType(grid, user->row +1, user->col +1 == '.')){
+        setCellType(grid, user->characterID, user->row +1, user->col +1);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row +1;
+        user->col = user->col +1;
+      }
+      else if(isalpha(getCellType(grid, user->row +1, user->col+1))){
+        user_t* user2 = getUserByID(users, getCellType(grid, user->row +1, user->col +1));
+        int tempRow = user->row;
+        int tempCol = user->col;
+        user->row = user2->row;
+        user->col = user2->col;
+        user2->row = tempRow;
+        user2->col = tempCol;
+        setCellType(grid, user->characterID, user->row, (user->col));
+        setCellType(grid, user2->characterID, user2->row, (user2->col));
+      }
+      else if(getCellType(grid, user->row +1, user-> col+1) == '*'){
+        setCellType(grid, user->characterID, user->row+1, user->col +1);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row+1;
+        user->col = user->col +1;
+        user->gold = user->gold +1;
+    }
+  }
+}
+
+
+moveDownLeft(user_t* user, GameMap* map, user_t* users[])
+{
+  if(user != NULL && ((user->row)+1) <=50 && ((user->col) -1 ) >=0){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row +1, user->col -1) == '#' ||
+          getCellType(grid, user->row +1, user->col -1 == '.')){
+        setCellType(grid, user->characterID, user->row +1, user->col -1);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row +1;
+        user->col = user->col -1;
+      }
+      else if(isalpha(getCellType(grid, user->row +1, user->col-1))){
+        user_t* user2 = getUserByID(users, getCellType(grid, user->row +1, user->col -1));
+        int tempRow = user->row;
+        int tempCol = user->col;
+        user->row = user2->row;
+        user->col = user2->col;
+        user2->row = tempRow;
+        user2->col = tempCol;
+        setCellType(grid, user->characterID, user->row  , (user->col));
+        setCellType(grid, user2->characterID, user2->row  , (user2->col));
+      }
+      else if(getCellType(grid, user->row +1, user-> col-1) == '*'){
+        setCellType(grid, user->characterID, user->row+1, user->col -1);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row+1;
+        user->col = user->col -1;
+        user->gold = user->gold +1;
+      }
+    }
+  }
+}
+
+moveUpRight(user_t* user, GameMap* map, user_t* users[])
+{
+  if(user != NULL && ((user->row)-1) >=0 && ((user->col) +1 ) <=50){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row -1, user->col +1) == '#' ||
+          getCellType(grid, user->row -1, user->col +1 == '.')){
+        setCellType(grid, user->characterID, user->row -1, user->col +1);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row -1;
+        user->col = user->col +1;
+      }
+      else if(isalpha(getCellType(grid, user->row -1, user->col+1))){
+        user_t* user2 = getUserByID(users, getCellType(grid, user->row - 1, user->col +1));
+        int tempRow = user->row;
+        int tempCol = user->col;
+        user->row = user2->row;
+        user->col = user2->col;
+        user2->row = tempRow;
+        user2->col = tempCol;
+        setCellType(grid, user->characterID, user->row , (user->col));
+        setCellType(grid, user2->characterID, user2->row , (user2->col));
+      }
+      else if(getCellType(grid, user->row -1, user-> col+1) == '*'){
+        setCellType(grid, user->characterID, user->row-1, user->col +1);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row-1;
+        user->col = user->col +1;
+        user->gold = user->gold +1;
+      }
+    }
+  }
+} 
+moveUpLeft(user_t* user, GameMap* map, user_t* users[])
+{
+  if(user != NULL && ((user->row)-1) >=0 && ((user->col) -1 ) >=0){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row -1, user->col -1) == '#' ||
+          getCellType(grid, user->row -1, user->col -1 == '.')){
+        setCellType(grid, user->characterID, user->row -1, user->col -1);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row -1;
+        user->col = user->col -1;
+      }
+      else if(isalpha(getCellType(grid, user->row -1, user->col-1))){
+        user_t* user2 = getUserByID(users, getCellType(grid, user->row - 1, user->col -1));
+        int tempRow = user->row;
+        int tempCol = user->col;
+        user->row = user2->row;
+        user->col = user2->col;
+        user2->row = tempRow;
+        user2->col = tempCol;
+        setCellType(grid, user->characterID, user->row, (user->col));
+        setCellType(grid, user2->characterID, user2->row , (user2->col));
+      }
+      else if(getCellType(grid, user->row -1, user-> col-1) == '*'){
+        setCellType(grid, user->characterID, user->row-1, user->col -1);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row-1;
+        user->col = user->col -1;
+        user->gold = user->gold +1;
+      }
+    }
+  }
+} 
+
+
+moveUp(user_t* user, GameMap* map, user_t* users[])
+{
+  if(user != NULL && ((user->row)-1) >=0){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row -1, user->col) == '#' ||
+          getCellType(grid, user->row -1, user->col == '.')){
+        setCellType(grid, user->characterID, user->row -1, user->col);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row -1;
+      }
+      else if(isalpha(getCellType(grid, user->row -1, user->col))){
+        user_t* user2 = getUserByID(users, getCellType(grid, user->row - 1, user->col));
+        int tempRow = user->row;
+        user->row = user2->row;
+        user2->row = tempRow;
+        setCellType(grid, user->characterID, user->row , (user->col));
+        setCellType(grid, user2->characterID, user2->row , (user2->col));
+      }
+      else if(getCellType(grid, user->row -1, user-> col) == '*'){
+        setCellType(grid, user->characterID, user->row-1, user->col);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row-1;
+        user->gold = user->gold +1;
+      }
+    }
+  }
+}
+
+moveDown(user_t* user, GameMap* map, user_t* users[])
+{
+  if(user != NULL && ((user->row)+1) >=0){
+    if(user_isActive(user)){
+      if(getCellType(grid, user->row +1, user->col) == '#' ||
+          getCellType(grid, user->row +1, user->col == '.')){
+        setCellType(grid, user->characterID, user->row =1, user->col);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row +1;
+      }
+      else if(isalpha(getCellType(grid, user->row +1, user->col))){
+        user_t* user2 = getUserByID(users, getCellType(grid, user->row + 1, user->col));
+        int tempRow = user->row;
+        user->row = user2->row;
+        user2->row = tempRow;
+        setCellType(grid, user->characterID, user->row , (user->col));
+        setCellType(grid, user2->characterID, user2->row , (user2->col));
+      }
+      else if(getCellType(grid, user->row +1, user-> col) == '*'){
+        setCellType(grid, user->characterID, user->row+1, user->col);
+        restoreCell(grid, user->row, user->col);
+        user->row = user->row+1;
+        user->gold = user->gold +1;
+      }
+    }
+  }
+}
