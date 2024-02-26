@@ -5,6 +5,16 @@
 #include <signal.h>
 #include <ncurses.h>
 
+typedef struct {
+    int nrows;
+    int ncols;
+    int charactersAppendedToBanner;
+} Display;
+
+static void moveToNormalBannerEnd();
+
+Display display = {0, 0, 0};
+
 bool
 init_curses(int nrows, int ncols)
 {
@@ -15,6 +25,9 @@ init_curses(int nrows, int ncols)
     if (nrows >= nrowsScreen || ncols >= ncolsScreen) {
         return false;
     }
+
+    display.nrows = nrows;
+    display.ncols = ncols;
 
     cbreak();
     noecho();
@@ -44,7 +57,30 @@ display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets, char*
 }
 
 void 
-append_to_banner(char* message, int ncols) 
+append_to_banner(char* message) 
+{
+    moveToNormalBannerEnd();
+
+    printw(" %s", message);
+    display.charactersAppendedToBanner = strlen(message);
+
+    refresh();
+}
+
+void 
+remove_from_banner()
+{
+    moveToNormalBannerEnd();
+    
+    for (int i = 0; i <= display.charactersAppendedToBanner; i++) {
+        delch();
+    }
+    
+    refresh();
+}
+
+static void
+moveToNormalBannerEnd() 
 {
     move(0, 0);
     
@@ -59,13 +95,10 @@ append_to_banner(char* message, int ncols)
 
     x++;
     move(y, x);
-
-    printw(" %s", message);
-    refresh();
 }
 
 void 
-display_board(char* board, int nrows, int ncols) 
+display_board(char* board) 
 {
     int x = 0;
     int y = 1;
@@ -73,12 +106,12 @@ display_board(char* board, int nrows, int ncols)
     for (int i = 0; i < strlen(board); i++) {
         char c = board[i];
 
-        if (x >= ncols) {
+        if (x >= display.ncols) {
             x = 0;
             y++;
         }
 
-        if (y >= nrows) {
+        if (y >= display.nrows) {
             break;
         }
 

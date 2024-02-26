@@ -150,8 +150,9 @@ handleMessage(void* arg, const addr_t from, const char* message)
 }
 
 static void
-sendReceipt(addr_t* serverp) {
-    message_send(*serverp, "received");
+sendReceipt(addr_t* serverp) 
+{
+    message_send(*serverp, "RECEIVED");
 }
 
 static bool 
@@ -196,6 +197,8 @@ sendKey(addr_t* serverp, char key)
     char message[10];
     sprintf(message, "KEY %c", key);
     message_send(*serverp, message);
+
+    remove_from_banner();
 }
 
 static void 
@@ -208,7 +211,7 @@ indicateInvalidKey(char key)
     char message[100];
     sprintf(message, "Invalid keystroke %c", key);
 
-    append_to_banner(message, client.ncols);
+    append_to_banner(message);
 }
 
 static void 
@@ -279,7 +282,7 @@ handleDisplay(char* board)
         return;
     }
 
-    display_board(board, client.nrows, client.ncols);
+    display_board(board);
 }
 
 static void 
