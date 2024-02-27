@@ -1,5 +1,5 @@
 #
-# Makefile for the gamemap module
+# Makefile for the server module
 # CS50 project 'Nuggets'
 #
 # Jaysen Quan, 2/21/2024
@@ -7,10 +7,10 @@
 
 CFLAGS = -Wall -pedantic -std=c11 -ggdb -I../support -I../gamemap
 CC = gcc
-OBJS = server.o ../gamemap/gamemap.o ../gamemap/file.o
+OBJS = server.o 
 
 LIBS = 
-LLIBS = ../support/support.a
+LLIBS = ../support/support.a ../gamemap/gamemap.a
 # TESTS =
 
 MAKE = make

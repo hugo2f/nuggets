@@ -32,6 +32,7 @@ typedef struct goldPile {
 
 typedef struct game {
   int currentNumPlayers;
+  int numGoldPiles;
   player_t** players;
   goldPile_t** goldPiles;
   GameMap_t* map;
@@ -43,7 +44,11 @@ game_t* game;
 //function prototypes
 void initializeGame();
 static bool handleMessage(void* arg, const addr_t from, const char* message);
+void distributeGold();
+void spawnGold(int rol, int col);
+void spawnPlayer(player_t* player, int row, int col);
 void callCommand(char key);
+void updatePlayerMaps();
 void sendGridToClient(player_t* player);
 player_t* playerJoin(addr_t address, char* name);
 player_t* checkPlayerJoined(addr_t address);
@@ -98,12 +103,13 @@ initializeGame()
   if (game == NULL) {
     return;
   }
-  game->map = loadMapFile("../maps/fewspots.txt");
+  game->map = loadMapFile("../maps/main.txt");
   game->players = malloc(MaxPlayers * sizeof(player_t*));
   if (game->players == NULL) {
     return;
   }
   game->currentNumPlayers = 0;
+  distributeGold();
 }
 
 static bool
@@ -119,7 +125,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
    * check if they exist in the array (loop through and use )
    * 
    */
-
+  printf("%s\n", message);
   player_t* player;
   if (sscanf(message, "PLAY %s", name) == 1) {
     player = playerJoin(from, name); 
@@ -185,24 +191,96 @@ void callCommand(char key)
 /*
  * Randomly distributes the gold throughout the map
  */
-void distributeGold(game_t* game) 
+void distributeGold() 
 {
   srand(time(NULL)); //seed the random number generator
 
   //generate random number of gold piles
-  int numGoldPiles = GoldMinNumPiles + rand() % (GoldMaxNumPiles - GoldMinNumPiles + 1);
-  game->goldPiles = malloc(numGoldPiles * sizeof(goldPile_t*));
+  game->numGoldPiles = GoldMinNumPiles + rand() % (GoldMaxNumPiles - GoldMinNumPiles + 1);
+  game->goldPiles = malloc(game->numGoldPiles * sizeof(goldPile_t*));
 
   //TO DO:
   /*
    * get array with valid spots (coordinates)
    * select numGoldPiles items from that array
-   * reservoir streaming 
+   * reservoir sampling 
    * update those positions in the map with gold 
    * store the gold pile in the array of goldPiles
    * to distribute the gold "fairly" 
    * for every piece of gold, randomly put it in a pile 
    */
+  int** roomCells = getRoomCells(game->map);
+  int size = 0;
+  // get number of room cells
+  for (size = 0; roomCells[size][0] != -1; size++) {
+  }
+  if (size < game->numGoldPiles) {
+    fprintf(stderr, "not enough room cells to distribute gold\n");
+    return;
+  }
+  // reservoir sampling to get indices
+  int* indices = malloc(game->numGoldPiles * sizeof(int));
+  if (indices == NULL) {
+    fprintf(stderr, "distributeGold memory allocation failed\n");
+    return;
+  }
+  for (int i = 0; i < game->numGoldPiles; i++) {
+    indices[i] = i;
+  }
+
+  for (int i = game->numGoldPiles; i < size; i++) {
+    int j = rand() % (i + 1);
+
+    if (j < game->numGoldPiles) {
+        indices[j] = i;
+    }
+  }
+
+  // TODO: go through indices and spawn gold piles at roomCells[indices[i]] = (row, col)
+  for (int i = 0; i < game->numGoldPiles; i++) {
+    int roomCellIndex = indices[i];
+    int row = roomCells[roomCellIndex][0];
+    int col = roomCells[roomCellIndex][1];
+
+    //update the map
+    spawnGold(row, col);
+  }
+  //update all player maps
+  updatePlayerMaps();
+
+  free(indices);
+  delete2DIntArr(roomCells, size);
+}
+
+/*
+ * Given a row and col, put gold on the map
+ * We assume that row col are valid "room cells" that are within
+ * the bounds of the map
+ */
+void
+spawnGold(int row, int col) 
+{
+  // get the current map
+  setCellType(game->map, '*', row, col);
+}
+
+void
+spawnPlayer(player_t* player, int row, int col) 
+{
+  setCellType(game->map, player->characterID, row, col);
+  //setCellType(player->playerMap, '@', row, col);
+  sendGridToClient(player);
+}
+/*
+ * Update all player maps with updated gameGrid
+ */
+void
+updatePlayerMaps()
+{
+  for (int i = 0; i < game->currentNumPlayers; i++) {
+    player_t* player = game->players[i];
+    player->playerMap = game->map;
+  }
 }
 
 /*
@@ -217,14 +295,15 @@ sendGridToClient(player_t* player)
   if (sizeMessage == NULL) {
     return;
   }
-  int numRows = getNumRows(game->map);
-  int numCols = getNumCols(game->map);
+  int numRows = getNumRows(player->playerMap);
+  int numCols = getNumCols(player->playerMap);
+  //printf("%d %d", numRows, numCols); //testing
   sprintf(sizeMessage, "GRID %d %d", numRows, numCols);
   message_send(player->playerAddress, sizeMessage);
 
   //send the actual grid to the client
-  char** grid = getGrid(game->map);
-  int size = strlen("DISPLAY ") + numRows * (numCols + 1) + 100;
+  char** grid = getGameGrid(player->playerMap);
+  int size = strlen("DISPLAY ") + numRows * numCols + 1;
   char* gridMessage = malloc(size * sizeof(char));
   if (gridMessage == NULL) {
     return;
@@ -237,8 +316,9 @@ sendGridToClient(player_t* player)
     }
   }
   gridMessage[pos] = '\0';
-  printf("here\n");
-  printf("%s\n", gridMessage);
+  //printf("here\n");
+  //printf("%s\n", gridMessage); //testing messages
+  printMap(game->map);
   message_send(player->playerAddress, gridMessage);
 
   //free pointers
@@ -266,10 +346,29 @@ playerJoin(addr_t address, char* name)
     newPlayer->characterID = id; //set id
     newPlayer->name = name; //set name
     newPlayer->playerAddress = address; //set address
-    newPlayer->playerMap = game->map; //set map (SPECTATOR VIEW FOR NOW)
+    //CREATE THE PLAYER MAp
     game->players[currentNumPlayers] = newPlayer; //add to array
     game->currentNumPlayers++;
+
+    //spawn the player 
+    srand(time(NULL)); //seed the random number generator
+    int** roomCells = getRoomCells(game->map);
+    // get number of room cells
+    int numRoomCells = 0;
+    while (roomCells[numRoomCells][0] != -1) {
+      numRoomCells++;
+    }
+
+    srand(time(NULL)); //seed random number generator
+    int randomCell = rand() % numRoomCells;
+
+    //get row and col for index
+    int row = roomCells[randomCell][0];
+    int col = roomCells[randomCell][1];
+    spawnPlayer(newPlayer, row, col);
     printf("new player has been added\n");
+
+    delete2DIntArr(roomCells, numRoomCells);
   } else {
     //space is full
     free(newPlayer);
@@ -297,3 +396,30 @@ checkPlayerJoined(addr_t address)
   return NULL;
 }
 
+/*
+ * Clean up the game by freeing any allocated memory
+ */
+void
+cleanUpGame() 
+{
+  //free any dynamically allocated data for each player in the game
+  for (int i = 0; i < game->currentNumPlayers; i++) {
+    player_t* player = game->players[i];
+    free(player->name);
+    free(player->playerMap);
+    free(player);
+  }
+  
+  //free the gold piles
+  for (int i = 0; i < game->numGoldPiles; i++) {
+    free(game->goldPiles[i]);
+  }
+
+  //free the bigger structs
+  free(game->players);
+  free (game->goldPiles);
+  free(game->map);
+
+  //free the game itself
+  free(game);
+}
