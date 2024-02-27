@@ -197,12 +197,42 @@ void distributeGold(game_t* game)
   /*
    * get array with valid spots (coordinates)
    * select numGoldPiles items from that array
-   * reservoir streaming 
+   * reservoir sampling 
    * update those positions in the map with gold 
    * store the gold pile in the array of goldPiles
    * to distribute the gold "fairly" 
    * for every piece of gold, randomly put it in a pile 
    */
+  int** roomCells = getRoomCells(game->map);
+  int size = 0;
+  // get number of room cells
+  for (size = 0; roomCells[size][0] != -1; size++) {
+  }
+  if (size < numGoldPiles) {
+    printf(stderr, "not enough room cells to distribute gold\n");
+    return;
+  }
+  // reservoir sampling to get indices
+  int* indices = malloc(numGoldPiles * sizeof(int));
+  if (indices == NULL) {
+    printf(stderr, "distributeGold memory allocation failed\n");
+    return;
+  }
+  for (int i = 0; i < numGoldPiles; i++) {
+    indices[i] = i;
+  }
+
+  for (int i = numGoldPiles; i < size; i++) {
+      int j = rand() % (i + 1);
+
+      if (j < numGoldPiles) {
+          indices[j] = i;
+      }
+  }
+
+  // TODO: go through indices and spawn gold piles at roomCells[indices[i]] = (row, col)
+  free(indices);
+
 }
 
 /*
