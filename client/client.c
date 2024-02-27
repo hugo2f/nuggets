@@ -45,6 +45,10 @@ static int getMapSize();
 
 ClientData client = {NULL, '\0', 0, 0, CLIENT_PRE_INIT};
 
+const int MAXIMUM_NAME_LENGTH;
+const int MAXIMUM_GOLD = 1000;
+const int MAXIMUM_MAP_SIZE = 1000;
+
 int 
 main(int argc, char* argv[]) 
 {
@@ -98,8 +102,8 @@ setPlayerName(char* name)
         return;
     }
 
-    if (strlen(name) > 50) { // USE CONSTANT INSTEAD
-        name[50] = '\0'; // USE CONSTANT INSTEAD
+    if (strlen(name) > MAXIMUM_NAME_LENGTH) {
+        name[MAXIMUM_NAME_LENGTH] = '\0';
     }
 
     client.playerName = name;
@@ -183,9 +187,13 @@ handleMessage(void* arg, const addr_t from, const char* message)
 static void
 sendReceipt(addr_t* serverp) 
 {
-    if (client.state != CLIENT_PLAY && client.state != CLIENT_PRE_INIT) {
+    #ifdef MINICLIENT_TEST
+	if (client.state != CLIENT_PLAY && client.state != CLIENT_PRE_INIT) {
         message_send(*serverp, "RECEIVED");
     }
+	#else
+	;
+	#endif
 }
 
 static bool 
@@ -209,7 +217,7 @@ sendStart(addr_t* serverp)
 static void 
 sendPlay(addr_t* serverp) 
 {
-    char message[100]; // USE CONSTANT INSTEAD
+    char message[MAXIMUM_NAME_LENGTH + 5];
     sprintf(message, "PLAY %s", client.playerName);
     message_send(*serverp, message);
 }
@@ -352,17 +360,17 @@ indicateNuggetsCollected(int collected)
 static bool
 validateGoldData(int collected, int current, int remaining)
 {
-    if (collected < 0 || collected > 10000) { // USE CONSTANT INSTEAD
+    if (collected < 0 || collected > MAXIMUM_GOLD) {
         fprintf(stderr, "Received invalid GOLD collected value\n");
         return false;
     }
 
-    if (current < 0 || current > 10000) { // USE CONSTANT INSTEAD
+    if (current < 0 || current > MAXIMUM_GOLD) {
         fprintf(stderr, "Received invalid current GOLD value\n");
         return false;
     }
 
-    if (remaining < 0 || remaining > 10000) { // USE CONSTANT INSTEAD
+    if (remaining < 0 || remaining > MAXIMUM_GOLD) {
         fprintf(stderr, "Received invalid remaining GOLD value\n");
         return false;
     }
@@ -374,6 +382,6 @@ static int
 getMapSize() 
 {
     int mapsize = client.ncols * client.nrows;
-    mapsize = (mapsize == 0) ? 1000 : mapsize;
+    mapsize = (mapsize == 0) ? MAXIMUM_MAP_SIZE : mapsize;
     return mapsize;
 }
