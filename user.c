@@ -48,7 +48,27 @@ user_t* getUserByID(user_t* user[], char ID)
   return NULL;
 }
 
+void stealGold(user_t* user1, user_t* user2)
+{
+  int value = user2->gold;
+  int stolen = 0;
+  if(value > 20){
+    stolen = value - 10;
+  }
+  else if(value > 10){
+    stolen = value - 5;
+  }
+  else if(value > 5){
+    stolen = value - 2;
+  }
+  else if(value >=1){
+    stolen = value;
+  }
+  user1->gold = user1->gold + stolen;
+  user2->gold = user2->gold - stolen;
+}
 
+/*
 void user_move(user_t* user, char command)
 {
   if(user != NULL){
@@ -83,7 +103,8 @@ void user_move(user_t* user, char command)
       }
     }
   }
-}      
+} 
+*/
       
 char getCharacterID(user)
 {
@@ -245,6 +266,7 @@ void moveDownRight(user_t* user, GameMap* map, user_t* users[])
         user2->col = tempCol;
         setCellType(grid, user->characterID, user->row, (user->col));
         setCellType(grid, user2->characterID, user2->row, (user2->col));
+        stealGold(user, user2);
       }
       else if(getCellType(grid, user->row +1, user-> col+1) == '*'){
         setCellType(grid, user->characterID, user->row+1, user->col +1);
@@ -278,6 +300,7 @@ void moveDownLeft(user_t* user, GameMap* map, user_t* users[])
         user2->col = tempCol;
         setCellType(grid, user->characterID, user->row  , (user->col));
         setCellType(grid, user2->characterID, user2->row  , (user2->col));
+        stealGold(user, user2);
       }
       else if(getCellType(grid, user->row +1, user-> col-1) == '*'){
         setCellType(grid, user->characterID, user->row+1, user->col -1);
@@ -311,6 +334,7 @@ void moveUpRight(user_t* user, GameMap* map, user_t* users[])
         user2->col = tempCol;
         setCellType(grid, user->characterID, user->row , (user->col));
         setCellType(grid, user2->characterID, user2->row , (user2->col));
+        stealGold(user, user2);
       }
       else if(getCellType(grid, user->row -1, user-> col+1) == '*'){
         setCellType(grid, user->characterID, user->row-1, user->col +1);
@@ -343,6 +367,7 @@ void moveUpLeft(user_t* user, GameMap* map, user_t* users[])
         user2->col = tempCol;
         setCellType(grid, user->characterID, user->row, (user->col));
         setCellType(grid, user2->characterID, user2->row , (user2->col));
+        stealGold(user, user2);
       }
       else if(getCellType(grid, user->row -1, user-> col-1) == '*'){
         setCellType(grid, user->characterID, user->row-1, user->col -1);
@@ -373,6 +398,7 @@ void moveUp(user_t* user, GameMap* map, user_t* users[])
         user2->row = tempRow;
         setCellType(grid, user->characterID, user->row , (user->col));
         setCellType(grid, user2->characterID, user2->row , (user2->col));
+        stealGold(user, user2);
       }
       else if(getCellType(grid, user->row -1, user-> col) == '*'){
         setCellType(grid, user->characterID, user->row-1, user->col);
@@ -401,6 +427,7 @@ void moveDown(user_t* user, GameMap* map, user_t* users[])
         user2->row = tempRow;
         setCellType(grid, user->characterID, user->row , (user->col));
         setCellType(grid, user2->characterID, user2->row , (user2->col));
+        stealGold(user, user2);
       }
       else if(getCellType(grid, user->row +1, user-> col) == '*'){
         setCellType(grid, user->characterID, user->row+1, user->col);
@@ -428,6 +455,7 @@ void moveLeft(user_t* user, GameMap* map, user_t* users[])
         user2->col = tempRow;
         setCellType(grid, user->characterID, user->row , (user->col));
         setCellType(grid, user2->characterID, user2->row , (user2->col));
+        stealGold(user, user2);
       }
       else if(getCellType(grid, user->row, user->col-1) == '*'){
         setCellType(grid, user->characterID, user->row, user->col-1);
@@ -455,6 +483,7 @@ void moveRight(user_t* user, GameMap* map, user_t* users[])
         user2->col = tempRow;
         setCellType(grid, user->characterID, user->row , (user->col));
         setCellType(grid, user2->characterID, user2->row , (user2->col));
+        stealGold(user, user2);
       }
       else if(getCellType(grid, user->row, user-> col+1) == '*'){
         setCellType(grid, user->characterID, user->row, user->col+1);
