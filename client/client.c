@@ -40,14 +40,15 @@ static void handleQuit(char* explanation);
 static void handleError(char* error);
 static void indicateInvalidKey(char key);
 static void indicateNuggetsCollected(int collected);
-static bool validateGoldData(int collected, int current, int remaining);
+static bool validateGoldCount(int count);
+static bool validatePlayerSymbol(char symbol);
 static int getMapSize(); 
 
 ClientData client = {NULL, '\0', 0, 0, CLIENT_PRE_INIT};
 
 const int MAXIMUM_NAME_LENGTH;
 const int MAXIMUM_GOLD = 1000;
-const int MAXIMUM_MAP_SIZE = 1000;
+const int MAXIMUM_MAP_SIZE = 2500;
 
 int 
 main(int argc, char* argv[]) 
@@ -143,7 +144,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
 {
     if (message == NULL) {
         fprintf(stderr, "Obtained NULL message");
-        sendReceipt(&from); // REMOVE LATER
+        sendReceipt(&from);
         return false;
     }
 
@@ -151,7 +152,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
     char remainder[100];
     if (sscanf(message, "%9s %99[^\n]", messageType, remainder) != 2) {
         fprintf(stderr, "Received message with invalid format\n");
-        sendReceipt(&from); // REMOVE LATER
+        sendReceipt(&from);
         return false;
     }
 
@@ -171,7 +172,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         char map[mapsize];
         if (sscanf(message, "%*s %99[^\n]", map) != 1) {
             fprintf(stderr, "Failed to retrieve map from DISPLAY message\n");
-            sendReceipt(&from); // REMOVE LATER
+            sendReceipt(&from);
             return false;
         }
 
@@ -180,7 +181,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         fprintf(stderr, "%s is an invalid message header\n", messageType);
     }
     
-    sendReceipt(&from); // REMOVE LATER
+    sendReceipt(&from);
     return false;
 }
 
@@ -218,7 +219,7 @@ static void
 sendPlay(addr_t* serverp) 
 {
     char message[MAXIMUM_NAME_LENGTH + 5];
-    sprintf(message, "PLAY %s", client.playerName);
+    snprintf(message, sizeof(message), "PLAY %s", client.playerName);
     message_send(*serverp, message);
 }
 
@@ -235,8 +236,8 @@ sendKey(addr_t* serverp, char key)
         return;
     }
 
-    char message[10]; // USE CONSTANT INSTEAD
-    sprintf(message, "KEY %c", key);
+    char message[6];
+    snprintf(message, sizeof(message), "KEY %c", key);
     message_send(*serverp, message);
 
     remove_from_banner();
@@ -246,11 +247,22 @@ static void
 handleOkay(char* symbol) 
 {
     if (client.state != CLIENT_START_SENT) {
-        fprintf(stderr, "Received OK prior to sending START\n");
+        fprintf(stderr, "Received OK again or prior to sending START\n");
         return;
     }
 
-    client.playerSymbol = *symbol;
+    if (strlen(symbol) > 1) {
+        fprintf(stderr, "Received player symbol with multiple characters, attempting to use first\n");
+    }
+
+    char symbolCharacter = *symbol;
+    
+    if (!validatePlayerSymbol(symbolCharacter)) {
+        fprintf(stderr, "Received invalid player symbol\n");
+        return;
+    }
+
+    client.playerSymbol = symbolCharacter;
 
     client.state = CLIENT_OKAY_RECEIVED;
 }
@@ -298,10 +310,23 @@ handleGold(char* counts)
         return;
     }
 
-    if (validateGoldData(collected, current, remaining)) {
-        display_banner(client.playerSymbol, current, remaining);
-        indicateNuggetsCollected(collected);
+    if (!validateGoldCount(collected)) {
+        fprintf(stderr, "Invalid 'collected' gold count %d", collected);
+        return;
     }
+
+    if (!validateGoldCount(current)) {
+        fprintf(stderr, "Invalid 'current' gold count %d", current);
+        return;
+    }
+
+    if (!validateGoldCount(remaining)) {
+        fprintf(stderr, "Invalid 'remaining' gold count %d", remaining);
+        return;
+    }
+
+    display_banner(client.playerSymbol, current, remaining);
+    indicateNuggetsCollected(collected);
 }
 
 static void 
@@ -341,8 +366,8 @@ indicateInvalidKey(char key)
         return;
     }
 
-    char message[20]; // USE CONSTANT INSTEAD
-    sprintf(message, "Invalid keystroke %c", key);
+    char message[20];
+    snprintf(message, sizeof(message), "Invalid keystroke %c", key);
 
     remove_from_banner();
     append_to_banner(message);
@@ -351,31 +376,22 @@ indicateInvalidKey(char key)
 static void
 indicateNuggetsCollected(int collected) 
 {
-    char message[100]; // USE CONSTANT INSTEAD
-    sprintf(message, "You collected %d nuggets!", collected);
+    char message[45];
+    snprintf(message, sizeof(message), "You collected %d nuggets!", collected);
 
     append_to_banner(message);
 }
 
-static bool
-validateGoldData(int collected, int current, int remaining)
+static bool 
+validateGoldCount(const int count) 
 {
-    if (collected < 0 || collected > MAXIMUM_GOLD) {
-        fprintf(stderr, "Received invalid GOLD collected value\n");
-        return false;
-    }
+    return count > 0 && count <= MAXIMUM_GOLD;
+}
 
-    if (current < 0 || current > MAXIMUM_GOLD) {
-        fprintf(stderr, "Received invalid current GOLD value\n");
-        return false;
-    }
-
-    if (remaining < 0 || remaining > MAXIMUM_GOLD) {
-        fprintf(stderr, "Received invalid remaining GOLD value\n");
-        return false;
-    }
-
-    return true;
+static bool
+validatePlayerSymbol(const char symbol)
+{
+    return symbol >= 'A' && symbol <= 'Z';
 }
 
 static int
