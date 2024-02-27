@@ -7,8 +7,8 @@
  * Hugo Fang, 2/21/2024
  */
 
-#ifndef __GameMap_t_H__
-#define __GameMap_t_H__
+#ifndef __GameMap_H__
+#define __GameMap_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +21,7 @@ typedef struct GameMap GameMap_t;
 int getNumRows(GameMap_t* map);
 int getNumCols(GameMap_t* map);
 char** getGrid(GameMap_t* map);
+char** getGameGrid(GameMap_t* map);
 
 /*
  * Loads a map file into a GameMap_t
@@ -67,6 +68,26 @@ void deleteGrid(char** grid, int numRows);
 char getCellType(GameMap_t* map, int row, int col);
 
 /*
+ * Set the type of cell at a coordinate
+ *
+ * Inputs:
+ *   map to update
+ *   type of cell to set to
+ *   row, col: coordinates of target cell
+ */
+void setCellType(GameMap_t* map, char type, int row, int col);
+
+/*
+ * (For use after a player moves from a cell)
+ * Restore a cell type to the map terrain at the cell
+ *
+ * Inputs:
+ *   map to update
+ *   row, col: coordinates of target cell
+ */
+void restoreCell(GameMap_t* map, int row, int col);
+
+/*
  * For a given coordinate, get a boolean version of the map.
  * true means visible, false means not visible
  *
@@ -75,11 +96,64 @@ char getCellType(GameMap_t* map, int row, int col);
  *   row, col: starting coordinate
  * 
  * Returns:
- *   2D numRows x numCols array of booleans
+ *   2D nx2 array of visible coordinates, terminated by (-1, -1)
+ *   NULL if map is NULL or invalid coordinates (not in map, not a room or passage cell)
+ * 
+ * Example: create map containing only visible cells
+      int** visibleRegion = getVisibleRegion(map, 10, 10);
+      int size = 0;
+      int numRows = getNumRows(map), numCols = getNumCols(map);
+      char** grid = malloc(numRows * sizeof(char*));
+      if (grid == NULL) {
+        return;
+      }
+
+      for (int row = 0; row < numRows; row++) {
+        grid[row] = malloc(numCols * sizeof(char));
+        memset(grid[row], ' ', numCols);
+      }
+
+      for (int row = 0; visibleRegion[row][0] != -1; row++) {
+        int visibleRow = visibleRegion[row][0], visibleCol = visibleRegion[row][1];
+        grid[visibleRow][visibleCol] = getCellType(map, visibleRow, visibleCol);
+        size++;
+      }
+ * Caller needs to later call deleteGrid on the returned pointer
+ */
+int** getVisibleRegion(GameMap_t* map, int row, int col);
+
+/*
+ * Return an array of room cell ('.') coordinates
+ *
+ * Inputs:
+ *   map: GameMap_t*
+ * 
+ * Returns:
+ *   2D nx2 array of coordinates, terminated by (-1, -1)
+ *   NULL if map is NULL or memory allocation error
+ * 
+ * Example: print out all room cell coordinates
+      int** roomCells = getRoomCells(map);
+      int size = 0;
+      for (int row = 0; roomCells[row][0] != -1; row++) {
+        printf("%d, %d\n", roomCells[row][0], roomCells[row][1]);
+        size++;
+      }
+      delete2DIntArr(roomCells, size + 1); // +1 for the (-1, -1) row
  * 
  * Caller needs to later call deleteGrid on the returned pointer
  */
-bool** getVisibleRegion(GameMap_t* map, int row, int col);
+int** getRoomCells(GameMap_t* map);
+
+/*
+ * Equivalent of deleteGrid, but for a 2d int array.
+ * Helper function to free the 2d array returned by getRoomCells
+ * 
+ * Inputs:
+ *   arr to delete
+ *   numRows in arr
+ */
+void delete2DIntArr(int** arr, int numRows);
 
 /*
  * Print out a map (for testing)
@@ -91,4 +165,4 @@ bool** getVisibleRegion(GameMap_t* map, int row, int col);
  */
 void printMap(GameMap_t* map);
 
-#endif // __GameMap_t_H__
+#endif // __GameMap_H__
