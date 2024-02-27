@@ -224,7 +224,7 @@ sendGridToClient(player_t* player)
 
   //send the actual grid to the client
   char** grid = getGrid(game->map);
-  int size = strlen("DISPLAY ") + numRows * (numCols + 1) + 10;
+  int size = strlen("DISPLAY ") + numRows * (numCols + 1) + 100;
   char* gridMessage = malloc(size * sizeof(char));
   if (gridMessage == NULL) {
     return;
@@ -237,13 +237,14 @@ sendGridToClient(player_t* player)
     }
   }
   gridMessage[pos] = '\0';
+  printf("here\n");
+  printf("%s\n", gridMessage);
   message_send(player->playerAddress, gridMessage);
 
   //free pointers
   free(sizeMessage);
   free(gridMessage);
 }
-
 
 /*
  * Create a new player and add it to the array of players
