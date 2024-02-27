@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <ncurses.h>
+#include "graphics.h"
 
 typedef struct {
     int nrowsScreen;
@@ -46,7 +47,7 @@ init_curses(int nrows, int ncols)
 }
 
 void
-display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets, char* additional)
+display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets)
 {
     if (playerSymbol == '\0') {
         return;
@@ -56,12 +57,7 @@ display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets, char*
     clrtoeol();
     
     char banner[200];
-
-    if (additional == NULL) {
-        additional = "";
-    }
-
-    sprintf(banner, "Player %c has %d nuggets (%d nuggets unclaimed). %s\n", playerSymbol, playerNuggets, unclaimedNuggets, additional);
+    sprintf(banner, "Player %c has %d nuggets (%d nuggets unclaimed).", playerSymbol, playerNuggets, unclaimedNuggets);
     mvprintw(0, 0, "%s", banner);
     
     refresh(); 
@@ -121,7 +117,7 @@ display_map(char* map)
             y++;
         }
 
-        if (y >= display.nrows) {
+        if (y >= display.nrows + 1) {
             break;
         }
 
@@ -136,10 +132,4 @@ void
 end_curses() 
 {
     endwin();
-}
-
-void
-clear_keystroke_buffer()
-{
-    flushinp();
 }
