@@ -21,6 +21,7 @@ typedef struct {
 } ClientData;
 
 static void parseArgs(int argc, char* argv[], addr_t* serverp);
+static void setPlayerName(char* name);
 static bool handleInput(void* server);
 static bool handleInputSpecific(addr_t* serverp, const char validInputs[]);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
@@ -73,8 +74,23 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
     }
 
     if (argc == 4) {
-        client.playerName = argv[3];
+        setPlayerName(argv[3]);
     }
+}
+
+static void
+setPlayerName(char* name) 
+{
+    if (client.playerName != NULL) {
+        fprintf(stderr, "Attempting to set player name again");
+        return;
+    }
+
+    if (strlen(name) > 50) {
+        name[50] = '\0';
+    }
+
+    client.playerName = name;
 }
 
 static bool 
