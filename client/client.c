@@ -23,7 +23,7 @@ typedef struct {
 static void parseArgs(int argc, char* argv[], addr_t* serverp);
 static void setPlayerName(char* name);
 static bool handleInput(void* server);
-static bool handleInputSpecific(addr_t* serverp, const char validInputs[]);
+static void handleInputSpecific(addr_t* serverp, const char validInputs[]);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 static void sendReceipt(addr_t* serverp);
 static bool sendStart(addr_t* serverp);
@@ -34,7 +34,7 @@ static void indicateInvalidKey(char key);
 static void handleOkay(char* symbol);
 static void handleGrid(char* coordinates);
 static void handleGold(char* counts);
-static void handleDisplay(char* board);
+static void handleDisplay(char* map);
 static void handleQuit(char* explanation);
 static void handleError(char* error);
 
@@ -73,9 +73,16 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
         exit(4);
     }
 
+    if (serverp == NULL || !message_isAddr(*serverp)) {
+        fprintf(stderr, "Invalid server address\n");
+        exit(5);
+    }
+
     if (argc == 4) {
         setPlayerName(argv[3]);
     }
+
+    sendStart(serverp);
 }
 
 static void
@@ -102,46 +109,48 @@ handleInput(void* server)
         return true;
     }
 
-    switch (client.state) {
-        case CLIENT_PRE_INIT:
-            return sendStart(serverp);
-        case CLIENT_INIT:
-            sendReceipt(serverp);
-            return false;
-        case CLIENT_PLAY:
-            if (client.playerName == NULL) {
-                return handleInputSpecific(serverp, "q");
-            } else {
-                return handleInputSpecific(serverp, "qhljkyunb");
-            }
-        default:
-            fprintf(stderr, "Unknown client state\n");
-            return true;
+    if (client.state == CLIENT_PLAY) {
+        if (client.playerName == NULL) {
+            handleInputSpecific(serverp, "q");
+        } else {
+            handleInputSpecific(serverp, "qhljkyunb");
+        }
+
+        return false;
+    } else if (client.state == CLIENT_PRE_INIT || client.state == CLIENT_INIT) {
+        return false;
     }
+
+    fprintf(stderr, "Unknown client state\n");
+    return true;
 }
 
-static bool 
+static void 
 handleInputSpecific(addr_t* serverp, const char validInputs[]) 
 {
     int input = getch();
+    clear_keystroke_buffer(); // NOT WORKING
     if (strchr(validInputs, input) != NULL) {
         sendKey(serverp, input);
     } else {
         indicateInvalidKey(input);
     }
-
-    return false;
 }
 
 static bool 
 handleMessage(void* arg, const addr_t from, const char* message) 
 {
-    if (message == NULL) return false;
+    if (message == NULL) {
+        fprintf(stderr, "Handling NULL message");
+        sendReceipt(&from); // REMOVE LATER
+        return false;
+    }
 
     char messageType[10];
     char remainder[100];
     if (sscanf(message, "%9s %99[^\n]", messageType, remainder) != 2) {
         fprintf(stderr, "Received message with invalid format\n");
+        sendReceipt(&from); // REMOVE LATER
         return false;
     }
 
@@ -152,7 +161,16 @@ handleMessage(void* arg, const addr_t from, const char* message)
     } else if (strcmp(messageType, "GOLD") == 0) {
         handleGold(remainder);
     } else if (strcmp(messageType, "DISPLAY") == 0) {
-        handleDisplay(remainder);
+        int mapsize = client.ncols * client.nrows;
+
+        char map[mapsize];
+        if (sscanf(message, "%*s %99[^\n]", map) != 1) {
+            fprintf(stderr, "Received map message with invalid format\n");
+            sendReceipt(&from); // REMOVE LATER
+            return false;
+        }
+
+        handleDisplay(map);
     } else if (strcmp(messageType, "QUIT") == 0) {
         handleQuit(remainder);
         return true;
@@ -161,14 +179,17 @@ handleMessage(void* arg, const addr_t from, const char* message)
     } else {
         fprintf(stderr, "%s is an invalid message header\n", messageType);
     }
-
+    
+    sendReceipt(&from); // REMOVE LATER
     return false;
 }
 
 static void
 sendReceipt(addr_t* serverp) 
 {
-    message_send(*serverp, "RECEIVED");
+    if (client.state == CLIENT_INIT) {
+        message_send(*serverp, "RECEIVED");
+    } 
 }
 
 static bool 
@@ -249,6 +270,11 @@ handleGrid(char* coordinates)
         return;
     }
 
+    if (client.playerSymbol == '\0') {
+        fprintf(stderr, "Received GRID prior to receiving OK\n");
+        return;
+    }
+
     int nrows, ncols;
     if (sscanf(coordinates, "%d %d", &nrows, &ncols) != 2) {
         fprintf(stderr, "GRID message missing data\n");
@@ -266,15 +292,13 @@ handleGrid(char* coordinates)
     client.ncols = ncols;
 
     display_banner(client.playerSymbol, 0, 0, 0);
-
-    client.state = CLIENT_PLAY;
 }
 
 static void 
 handleGold(char* counts) 
 {
     if (client.state != CLIENT_PLAY) {
-        fprintf(stderr, "Received GOLD not during client phase\n");
+        fprintf(stderr, "Received GOLD not during client play phase\n");
         return;
     }
 
@@ -291,14 +315,18 @@ handleGold(char* counts)
 }
 
 static void 
-handleDisplay(char* board) 
+handleDisplay(char* map) 
 {
-    if (client.state != CLIENT_PLAY) {
-        fprintf(stderr, "Received DISPLAY not during client phase\n");
+    if (client.state == CLIENT_PRE_INIT) {
+        fprintf(stderr, "Received DISPLAY during client CLIENT_PRE_INIT phase\n");
         return;
     }
 
-    display_board(board);
+    display_map(map);
+
+    if (client.state != CLIENT_PLAY) {
+        client.state = CLIENT_PLAY;
+    }
 }
 
 static void 

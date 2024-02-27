@@ -6,9 +6,10 @@
 #include <ncurses.h>
 
 typedef struct {
+    int nrowsScreen;
+    int ncolsScreen;
     int nrows;
     int ncols;
-    int charactersAppendedToBanner;
 } Display;
 
 static void moveToNormalBannerEnd();
@@ -26,11 +27,16 @@ init_curses(int nrows, int ncols)
         return false;
     }
 
+    display.nrowsScreen = nrowsScreen;
+    display.ncolsScreen = ncolsScreen;
     display.nrows = nrows;
     display.ncols = ncols;
 
     cbreak();
     noecho();
+    nodelay(stdscr, TRUE);
+    keypad(stdscr, TRUE);
+    flushinp();
 
     start_color();
     init_pair(1, COLOR_WHITE, COLOR_BLACK);
@@ -50,6 +56,11 @@ display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets, char*
     clrtoeol();
     
     char banner[200];
+
+    if (additional == NULL) {
+        additional = "";
+    }
+
     sprintf(banner, "Player %c has %d nuggets (%d nuggets unclaimed). %s\n", playerSymbol, playerNuggets, unclaimedNuggets, additional);
     mvprintw(0, 0, "%s", banner);
     
@@ -61,8 +72,7 @@ append_to_banner(char* message)
 {
     moveToNormalBannerEnd();
 
-    printw(" %s", message);
-    display.charactersAppendedToBanner = strlen(message);
+    printw("%s", message);
 
     refresh();
 }
@@ -72,7 +82,7 @@ remove_from_banner()
 {
     moveToNormalBannerEnd();
     
-    for (int i = 0; i <= display.charactersAppendedToBanner; i++) {
+    for (int i = 0; i <= display.ncolsScreen; i++) {
         delch();
     }
     
@@ -94,17 +104,17 @@ moveToNormalBannerEnd()
     }
 
     x++;
-    move(y, x);
+    move(y, ++x);
 }
 
 void 
-display_board(char* board) 
+display_map(char* map) 
 {
     int x = 0;
     int y = 1;
 
-    for (int i = 0; i < strlen(board); i++) {
-        char c = board[i];
+    for (int i = 0; i < strlen(map); i++) {
+        char c = map[i];
 
         if (x >= display.ncols) {
             x = 0;
@@ -126,4 +136,10 @@ void
 end_curses() 
 {
     endwin();
+}
+
+void
+clear_keystroke_buffer()
+{
+    flushinp();
 }
