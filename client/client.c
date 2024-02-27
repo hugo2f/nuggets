@@ -40,6 +40,7 @@ static void handleQuit(char* explanation);
 static void handleError(char* error);
 static void indicateInvalidKey(char key);
 static void indicateNuggetsCollected(int collected);
+static bool validateGoldData(int collected, int current, int remaining);
 static int getMapSize(); 
 
 ClientData client = {NULL, '\0', 0, 0, CLIENT_PRE_INIT};
@@ -97,8 +98,8 @@ setPlayerName(char* name)
         return;
     }
 
-    if (strlen(name) > 50) {  // CHANGE
-        name[50] = '\0';  // CHANGE
+    if (strlen(name) > 50) { // USE CONSTANT INSTEAD
+        name[50] = '\0'; // USE CONSTANT INSTEAD
     }
 
     client.playerName = name;
@@ -208,7 +209,7 @@ sendStart(addr_t* serverp)
 static void 
 sendPlay(addr_t* serverp) 
 {
-    char message[100];  // CHANGE
+    char message[100]; // USE CONSTANT INSTEAD
     sprintf(message, "PLAY %s", client.playerName);
     message_send(*serverp, message);
 }
@@ -226,7 +227,7 @@ sendKey(addr_t* serverp, char key)
         return;
     }
 
-    char message[10];  // CHANGE
+    char message[10]; // USE CONSTANT INSTEAD
     sprintf(message, "KEY %c", key);
     message_send(*serverp, message);
 
@@ -289,8 +290,10 @@ handleGold(char* counts)
         return;
     }
 
-    display_banner(client.playerSymbol, current, remaining);
-    indicateNuggetsCollected(collected);
+    if (validateGoldData(collected, current, remaining)) {
+        display_banner(client.playerSymbol, current, remaining);
+        indicateNuggetsCollected(collected);
+    }
 }
 
 static void 
@@ -330,7 +333,7 @@ indicateInvalidKey(char key)
         return;
     }
 
-    char message[20];  // CHANGE
+    char message[20]; // USE CONSTANT INSTEAD
     sprintf(message, "Invalid keystroke %c", key);
 
     remove_from_banner();
@@ -340,10 +343,31 @@ indicateInvalidKey(char key)
 static void
 indicateNuggetsCollected(int collected) 
 {
-    char message[100]; // CHANGE
+    char message[100]; // USE CONSTANT INSTEAD
     sprintf(message, "You collected %d nuggets!", collected);
 
     append_to_banner(message);
+}
+
+static bool
+validateGoldData(int collected, int current, int remaining)
+{
+    if (collected < 0 || collected > 10000) { // USE CONSTANT INSTEAD
+        fprintf(stderr, "Received invalid GOLD collected value\n");
+        return false;
+    }
+
+    if (current < 0 || current > 10000) { // USE CONSTANT INSTEAD
+        fprintf(stderr, "Received invalid current GOLD value\n");
+        return false;
+    }
+
+    if (remaining < 0 || remaining > 10000) { // USE CONSTANT INSTEAD
+        fprintf(stderr, "Received invalid remaining GOLD value\n");
+        return false;
+    }
+
+    return true;
 }
 
 static int

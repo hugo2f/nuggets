@@ -56,8 +56,8 @@ display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets)
     move(0, 0);
     clrtoeol();
     
-    char banner[200];
-    sprintf(banner, "Player %c has %d nuggets (%d nuggets unclaimed).", playerSymbol, playerNuggets, unclaimedNuggets);
+    char banner[display.ncolsScreen];
+    snprintf(banner, sizeof(banner), "Player %c has %d nuggets (%d nuggets unclaimed).", playerSymbol, playerNuggets, unclaimedNuggets);
     mvprintw(0, 0, "%s", banner);
     
     refresh(); 
