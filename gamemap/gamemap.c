@@ -24,6 +24,10 @@ typedef struct GameMap {
 static const int dr[] = {0, 1, 0, -1};
 static const int dc[] = {1, 0, -1, 0};
 
+// players can only see up to 5 units away, with diagonals
+// counting as 1 unit
+static const int sightRadius = 5;
+
 /* Local functions */
 
 // Getters
@@ -213,7 +217,7 @@ int** getVisibleRegion(GameMap_t* map, int row, int col)
   int idx = 0; // start filling in later visible cells from 1
   int found = 1; // visible cells found in the previous checkSquare call
   // expand radius to check until no new visible cells are found
-  for (int radius = 1; found > 0; radius++) {
+  for (int radius = 1; radius <= sightRadius && found > 0; radius++) {
     // check square around (row, col) of `radius`
     found = checkSquare(map, visibleRegion, idx, row, col, radius);
     // checkSquare returns -1 on memory allocation error
