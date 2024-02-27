@@ -159,7 +159,7 @@ char getCellType(GameMap_t* map, int row, int col)
   if (outOfMap(map, row, col)) {
     return '\0';
   }
-  return map->grid[row][col];
+  return map->gameGrid[row][col];
 }
 
 void setCellType(GameMap_t* map, char type, int row, int col)
