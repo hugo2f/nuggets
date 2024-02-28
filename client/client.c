@@ -22,8 +22,8 @@ ClientData client = {NULL, '\0', 0, 0, CLIENT_PRE_INIT};
 const int MAXIMUM_NAME_LENGTH = 50;
 const int MAXIMUM_GOLD = 1000;
 const int MAXIMUM_MAP_SIZE = 2500;
-const char* PLAYER_KEYSTROKES = "qhljkyunb";
-const char* SPECTATOR_KEYSTROKES = "q";
+const char* PLAYER_KEYSTROKES = "qQhHlLjJkKyYuUnNbB";
+const char* SPECTATOR_KEYSTROKES = "qQ";
 
 int 
 main(int argc, char* argv[]) 
