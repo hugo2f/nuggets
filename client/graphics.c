@@ -17,7 +17,7 @@ typedef struct {
 static void setupScreenSize();
 static void moveToNormalBannerEnd();
 
-Display display = {0, 0, 0};
+Display display = {0, 0, 0, 0};
 
 bool
 init_curses(int nrows, int ncols)
@@ -145,6 +145,12 @@ display_map(char* map)
     }
 
     refresh();
+}
+
+char
+get_character()
+{
+    return getch();
 }
 
 void
