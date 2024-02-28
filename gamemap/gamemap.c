@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #include "file.h"
 
@@ -24,8 +25,9 @@ typedef struct GameMap {
 static const int dr[] = {0, 1, 0, -1};
 static const int dc[] = {1, 0, -1, 0};
 
-// players can only see up to 5 units away, with diagonals
-// counting as 1 unit
+// players can only see up to sightRadius units away, with diagonals
+// counting as 1 unit (such that a visible cell is at most
+// sightRadius cells away in either direction)
 static const int sightRadius = 5;
 
 /* Local functions */
@@ -61,6 +63,45 @@ char** getGameGrid(GameMap_t* map)
     return 0;
   }
   return map->gameGrid;
+}
+
+char getCellType(GameMap_t* map, int row, int col)
+{
+  if (outOfMap(map, row, col)) {
+    return '\0';
+  }
+  return map->gameGrid[row][col];
+}
+
+char getCellTerrain(GameMap_t* map, int row, int col)
+{
+  if (outOfMap(map, row, col)) {
+    return '\0';
+  }
+  return map->grid[row][col];
+}
+
+void setCellType(GameMap_t* map, char type, int row, int col)
+{
+  // invalid coordinates
+  if (outOfMap(map, row, col)) {
+    return;
+  }
+
+  // can't change a wall or solid rock to another type
+  char curType = map->grid[row][col];
+  if (isWall(type) || curType == ' ') {
+    return;
+  }
+  map->gameGrid[row][col] = type;
+}
+
+void restoreCell(GameMap_t* map, int row, int col)
+{
+  if (outOfMap(map, row, col)) {
+    return;
+  }
+  map->gameGrid[row][col] = map->grid[row][col];
 }
 
 // Helper functions
@@ -154,37 +195,6 @@ void deleteGrid(char** grid, int numRows)
   free(grid);
 }
 
-char getCellType(GameMap_t* map, int row, int col)
-{
-  if (outOfMap(map, row, col)) {
-    return '\0';
-  }
-  return map->gameGrid[row][col];
-}
-
-void setCellType(GameMap_t* map, char type, int row, int col)
-{
-  // invalid coordinates
-  if (outOfMap(map, row, col)) {
-    return;
-  }
-
-  // can't change a wall or solid rock to another type
-  char curType = map->grid[row][col];
-  if (isWall(type) || curType == ' ') {
-    return;
-  }
-  map->gameGrid[row][col] = type;
-}
-
-void restoreCell(GameMap_t* map, int row, int col)
-{
-  if (outOfMap(map, row, col)) {
-    return;
-  }
-  map->gameGrid[row][col] = map->grid[row][col];
-}
-
 int** getVisibleRegion(GameMap_t* map, int row, int col)
 {
   // parameter checks
@@ -193,7 +203,7 @@ int** getVisibleRegion(GameMap_t* map, int row, int col)
   }
   // a player would can only be in a room ('.') or passage cell ('#')
   char type = getCellType(map, row, col);
-  if (type != '.' && type != '#') {
+  if (type != '.' && type != '#' && !isalpha(type)) {
     return NULL;
   }
 
@@ -282,7 +292,6 @@ int checkSquare(GameMap_t* map, int** visibleRegion, int idx,
     }
   }
   return curIdx - idx;
-
 }
 
 /*
