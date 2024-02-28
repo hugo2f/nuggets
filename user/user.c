@@ -3,13 +3,14 @@
 #include <strings.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include "gamemap.h" 
 #include "user.h"
 
 
 typedef struct user {
   char characterID;
-  GameMap* map;
+  GameMap_t* map;
   int gold;
   char* realName;
   int row;
@@ -22,7 +23,7 @@ static void moveRight(user_t*);
 static void moveUp(user_t*);
 static void moveDown(user_t*);
 */
-user_t* user_new(char ID, GameMap* map, int gold, char* realName, int row, int col)
+user_t* user_new(char ID, GameMap_t* map, int gold, char* realName, int row, int col)
 {
   user_t* user = malloc(sizeof(user_t));
   if(user != NULL){
@@ -38,10 +39,11 @@ user_t* user_new(char ID, GameMap* map, int gold, char* realName, int row, int c
   return NULL;
 }
 
-user_t* getUserByID(user_t* user[], char ID)
+user_t* getUserByID(user_t* users[], char ID)
 {
   char index = ID - 'A';
-  char returner = users[index];
+  int index2 = index - '0';
+  user_t* returner = users[index2];
   if(returner != NULL){
     return returner;
   }
@@ -68,43 +70,39 @@ void stealGold(user_t* user1, user_t* user2)
   user2->gold = user2->gold - stolen;
 }
 
-/*
-void user_move(user_t* user, char command)
+
+void user_move(user_t* user, char command, GameMap_t* map, user_t* users[])
 {
   if(user != NULL){
     if(user->active){
       if(command == 'h'){
-        moveLeft(user);
+        moveLeft(user, map, users);
       }
       else if(command == 'l'){
-        moveRight(user);
+        moveRight(user, map, users);
       }
       else if(command == 'j'){
-        moveDown(user);
+        moveDown(user, map, users);
       }
       else if(command == 'k'){
-        moveUp(user);
+        moveUp(user, map, users);
       }
       else if(command == 'y'){
-        moveUp(user);
-        moveLeft(user);
+        moveUpLeft(user, map, users);
       }
       else if(command == 'u'){
-        moveUp(user);
-        moveRight(user);
+        moveUpRight(user, map, users);
       }
       else if(command == 'b'){
-        moveDown(user);
-        moveLeft(user);
+        moveDownLeft(user, map, users);
       }
       else if(command == 'n'){
-        moveDown(user);
-        moveRight(user);
+        moveDownRight(user, map, users);
       }
     }
   }
 } 
-*/
+
       
 char getCharacterID(user_t* user)
 {
@@ -257,9 +255,9 @@ static void moveDownLeft(user_t* user, GameMap* map)
   }
 } 
 */
-void moveDownRight(user_t* user, GameMap* map, user_t* users[])
+void moveDownRight(user_t* user, GameMap_t* grid, user_t* users[])
 {
-  if(user != NULL && ((user->row)+1) <=50 && ((user->col) +1 ) <=50){
+  if(user != NULL && ((user->row)+1) <= getNumRows(grid) && ((user->col) +1 ) <= getNumCols(grid)){
     if(user_isActive(user)){
       if(getCellType(grid, user->row +1, user->col +1) == '#' ||
           getCellType(grid, user->row +1, user->col +1) == '.'){
@@ -286,14 +284,15 @@ void moveDownRight(user_t* user, GameMap* map, user_t* users[])
         user->row = user->row+1;
         user->col = user->col +1;
         user->gold = user->gold +1;
+      }
     }
   }
 }
 
 
-void moveDownLeft(user_t* user, GameMap* map, user_t* users[])
+void moveDownLeft(user_t* user, GameMap_t* grid, user_t* users[])
 {
-  if(user != NULL && ((user->row)+1) <=50 && ((user->col) -1 ) >=0){
+  if(user != NULL && ((user->row)+1) <= getNumRows(grid) && ((user->col) -1 ) >=0){
     if(user_isActive(user)){
       if(getCellType(grid, user->row +1, user->col -1) == '#' ||
           getCellType(grid, user->row +1, user->col -1) == '.'){
@@ -325,9 +324,9 @@ void moveDownLeft(user_t* user, GameMap* map, user_t* users[])
   }
 }
 
-void moveUpRight(user_t* user, GameMap* map, user_t* users[])
+void moveUpRight(user_t* user, GameMap_t* grid, user_t* users[])
 {
-  if(user != NULL && ((user->row)-1) >=0 && ((user->col) +1 ) <=50){
+  if(user != NULL && ((user->row)-1) >=0 && ((user->col) +1 ) <= getNumCols(grid)){
     if(user_isActive(user)){
       if(getCellType(grid, user->row -1, user->col +1) == '#' ||
           getCellType(grid, user->row -1, user->col +1) == '.'){
@@ -357,8 +356,9 @@ void moveUpRight(user_t* user, GameMap* map, user_t* users[])
       }
     }
   }
-} 
-void moveUpLeft(user_t* user, GameMap* map, user_t* users[])
+}
+
+void moveUpLeft(user_t* user, GameMap_t* grid, user_t* users[])
 {
   if(user != NULL && ((user->row)-1) >=0 && ((user->col) -1 ) >=0){
     if(user_isActive(user)){
@@ -393,7 +393,7 @@ void moveUpLeft(user_t* user, GameMap* map, user_t* users[])
 } 
 
 
-void moveUp(user_t* user, GameMap* map, user_t* users[])
+void moveUp(user_t* user, GameMap_t* grid, user_t* users[])
 {
   if(user != NULL && ((user->row)-1) >=0){
     if(user_isActive(user)){
@@ -422,9 +422,9 @@ void moveUp(user_t* user, GameMap* map, user_t* users[])
   }
 }
 
-void moveDown(user_t* user, GameMap* map, user_t* users[])
+void moveDown(user_t* user, GameMap_t* grid, user_t* users[])
 {
-  if(user != NULL && ((user->row)+1) <=50){
+  if(user != NULL && ((user->row)+1) <= getNumRows(grid)){
     if(user_isActive(user)){
       if(getCellType(grid, user->row +1, user->col) == '#' ||
           getCellType(grid, user->row +1, user->col) == '.'){
@@ -450,7 +450,7 @@ void moveDown(user_t* user, GameMap* map, user_t* users[])
     }
   }
 }
-void moveLeft(user_t* user, GameMap* map, user_t* users[])
+void moveLeft(user_t* user, GameMap_t* grid, user_t* users[])
 {
   if(user != NULL && ((user->col)-1) >=0){
     if(user_isActive(user)){
@@ -478,9 +478,9 @@ void moveLeft(user_t* user, GameMap* map, user_t* users[])
     }
   }
 }
-void moveRight(user_t* user, GameMap* map, user_t* users[])
+void moveRight(user_t* user, GameMap_t* grid, user_t* users[])
 {
-  if(user != NULL && ((user->col)+1) <=50){
+  if(user != NULL && ((user->col)+1) <=getNumCols(grid)){
     if(user_isActive(user)){
       if(getCellType(grid, user->row, user->col+1) == '#' ||
           getCellType(grid, user->row, user->col+1) == '.'){

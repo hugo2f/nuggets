@@ -5,7 +5,7 @@
 #
 # for documentation on gitignore files, see
 #   https://git-scm.com/docs/gitignore
-
+user
 # NFS files
 .nfs*
 
