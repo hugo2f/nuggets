@@ -25,4 +25,4 @@ extern const int MAXIMUM_NAME_LENGTH;
 extern const int MAXIMUM_GOLD;
 extern const int MAXIMUM_MAP_SIZE;
 
-#endif /* CLIENT_DATA_H */
+#endif
