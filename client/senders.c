@@ -5,7 +5,6 @@
 #include "message.h"
 #include "clientdata.h"
 #include "senders.h"
-#include "graphics.h"
 
 static void sendPlay(addr_t* serverp);
 static void sendSpectate(addr_t* serverp);  

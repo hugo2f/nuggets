@@ -129,7 +129,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
 {
     if (message == NULL) {
         fprintf(stderr, "Obtained NULL message");
-        send_receipt(&from);
+        send_receipt((addr_t *)&from);
         return false;
     }
 
@@ -137,7 +137,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
     char remainder[100];
     if (sscanf(message, "%9s %99[^\n]", messageType, remainder) != 2) {
         fprintf(stderr, "Received message with invalid format\n");
-        send_receipt(&from);
+        send_receipt((addr_t *)&from);
         return false;
     }
 
@@ -157,7 +157,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         char map[mapsize];
         if (sscanf(message, "%*s %[^\n]", map) != 1) {
             fprintf(stderr, "Failed to retrieve map from DISPLAY message\n");
-            send_receipt(&from);
+            send_receipt((addr_t *)&from);
             return false;
         }
 
@@ -166,7 +166,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         fprintf(stderr, "%s is an invalid message header\n", messageType);
     }
     
-    send_receipt(&from);
+    send_receipt((addr_t *)&from);
     return false;
 }
 
