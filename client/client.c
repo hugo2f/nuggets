@@ -7,33 +7,15 @@
 #include "graphics.h"
 #include "validators.h"
 #include "indicators.h"
-
-enum ClientState {
-    CLIENT_PRE_INIT,
-    CLIENT_START_SENT,
-    CLIENT_OKAY_RECEIVED,
-    CLIENT_GRID_RECEIVED,
-    CLIENT_PLAY
-};
-
-typedef struct {
-    char* playerName;
-    char playerSymbol;
-    int nrows;
-    int ncols;
-    int state;
-} ClientData;
+#include "senders.h"
+#include "clientdata.h"
 
 static void parseArgs(int argc, char* argv[], addr_t* serverp);
 static void setPlayerName(char* name);
 static bool handleInput(void* server);
 static void handleClientTypeSpecificInput(addr_t* serverp, const char validInputs[]);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
-static void sendReceipt(addr_t* serverp);
-static bool sendStart(addr_t* serverp);
-static void sendPlay(addr_t* serverp);
-static void sendSpectate(addr_t* serverp);
-static void sendKey(addr_t* serverp, char message);
+
 static void handleOkay(char* symbol);
 static void handleGrid(char* coordinates);
 static void handleGold(char* counts);
@@ -90,7 +72,7 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
         setPlayerName(argv[3]);
     }
 
-    sendStart(serverp);
+    send_start(serverp);
 }
 
 static void
@@ -135,7 +117,8 @@ handleClientTypeSpecificInput(addr_t* serverp, const char validInputs[])
 {
     int input = getch();
     if (strchr(validInputs, input) != NULL) {
-        sendKey(serverp, input);
+        send_key(serverp, input);
+        remove_from_banner();
     } else {
         indicate_invalid_key(input);
     }
@@ -146,7 +129,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
 {
     if (message == NULL) {
         fprintf(stderr, "Obtained NULL message");
-        sendReceipt(&from);
+        send_receipt(&from);
         return false;
     }
 
@@ -154,7 +137,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
     char remainder[100];
     if (sscanf(message, "%9s %99[^\n]", messageType, remainder) != 2) {
         fprintf(stderr, "Received message with invalid format\n");
-        sendReceipt(&from);
+        send_receipt(&from);
         return false;
     }
 
@@ -174,7 +157,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         char map[mapsize];
         if (sscanf(message, "%*s %[^\n]", map) != 1) {
             fprintf(stderr, "Failed to retrieve map from DISPLAY message\n");
-            sendReceipt(&from);
+            send_receipt(&from);
             return false;
         }
 
@@ -183,66 +166,8 @@ handleMessage(void* arg, const addr_t from, const char* message)
         fprintf(stderr, "%s is an invalid message header\n", messageType);
     }
     
-    sendReceipt(&from);
+    send_receipt(&from);
     return false;
-}
-
-static void
-sendReceipt(addr_t* serverp) 
-{
-    #ifdef MINISERVER_TEST
-	if (client.state != CLIENT_PLAY && client.state != CLIENT_PRE_INIT) {
-        message_send(*serverp, "RECEIVED");
-    }
-	#else
-	;
-	#endif
-}
-
-static bool 
-sendStart(addr_t* serverp) 
-{
-    if (client.state != CLIENT_PRE_INIT) {
-        fprintf(stderr, "Sent START again\n");
-        return true;
-    }
-
-    if (client.playerName == NULL) {
-        sendSpectate(serverp);
-    } else {
-        sendPlay(serverp);
-    }
-
-    client.state = CLIENT_START_SENT;
-    return false;
-}
-
-static void 
-sendPlay(addr_t* serverp) 
-{
-    char message[MAXIMUM_NAME_LENGTH + 5];
-    snprintf(message, sizeof(message), "PLAY %s", client.playerName);
-    message_send(*serverp, message);
-}
-
-static void 
-sendSpectate(addr_t* serverp) 
-{
-    message_send(*serverp, "SPECTATE");
-}
-
-static void 
-sendKey(addr_t* serverp, char key) 
-{
-    if (client.state != CLIENT_PLAY) {
-        return;
-    }
-
-    char message[6];
-    snprintf(message, sizeof(message), "KEY %c", key);
-    message_send(*serverp, message);
-
-    remove_from_banner();
 }
 
 static void 
