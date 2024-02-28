@@ -5,6 +5,8 @@
 #include <ncurses.h>
 #include "message.h"
 #include "graphics.h"
+#include "validators.h"
+#include "indicators.h"
 
 enum ClientState {
     CLIENT_PRE_INIT,
@@ -38,10 +40,6 @@ static void handleGold(char* counts);
 static void handleDisplay(char* map);
 static void handleQuit(char* explanation);
 static void handleError(char* error);
-static void indicateInvalidKey(char key);
-static void indicateNuggetsCollected(int collected);
-static bool validateGoldCount(int count);
-static bool validatePlayerSymbol(char symbol);
 static int getMapSize(); 
 
 ClientData client = {NULL, '\0', 0, 0, CLIENT_PRE_INIT};
@@ -113,6 +111,10 @@ setPlayerName(char* name)
 static bool 
 handleInput(void* server) 
 {    
+    if (client.state != CLIENT_PLAY) {
+        return false;
+    }
+    
     addr_t* serverp = server;
     if (serverp == NULL || !message_isAddr(*serverp)) {
         fprintf(stderr, "Invalid server address\n");
@@ -135,7 +137,7 @@ handleClientTypeSpecificInput(addr_t* serverp, const char validInputs[])
     if (strchr(validInputs, input) != NULL) {
         sendKey(serverp, input);
     } else {
-        indicateInvalidKey(input);
+        indicate_invalid_key(input);
     }
 }
 
@@ -258,7 +260,7 @@ handleOkay(char* symbol)
 
     char symbolCharacter = *symbol;
     
-    if (!validatePlayerSymbol(symbolCharacter)) {
+    if (!validate_player_symbol(symbolCharacter)) {
         fprintf(stderr, "Received invalid player symbol\n");
         errors++;
     }
@@ -316,17 +318,17 @@ handleGold(char* counts)
     }
 
     int errors = 0;
-    if (!validateGoldCount(collected)) {
+    if (!validate_gold_count(collected, MAXIMUM_GOLD)) {
         fprintf(stderr, "Invalid 'collected' gold count %d\n", collected);
         errors++;
     }
 
-    if (!validateGoldCount(current)) {
+    if (!validate_gold_count(current, MAXIMUM_GOLD)) {
         fprintf(stderr, "Invalid 'current' gold count %d\n", current);
         errors++;
     }
 
-    if (!validateGoldCount(remaining)) {
+    if (!validate_gold_count(remaining, MAXIMUM_GOLD)) {
         fprintf(stderr, "Invalid 'remaining' gold count %d\n", remaining);
         errors++;
     }
@@ -336,7 +338,7 @@ handleGold(char* counts)
     }
 
     display_banner(client.playerSymbol, current, remaining);
-    indicateNuggetsCollected(collected);
+    indicate_nuggets_collected(collected);
 }
 
 static void 
@@ -367,41 +369,6 @@ static void
 handleError(char* error) 
 {
     fprintf(stderr, "ERROR %s\n", error);
-}
-
-static void 
-indicateInvalidKey(char key) 
-{
-    if (client.state != CLIENT_PLAY) {
-        return;
-    }
-
-    char message[20];
-    snprintf(message, sizeof(message), "Invalid keystroke %c", key);
-
-    remove_from_banner();
-    append_to_banner(message);
-}
-
-static void
-indicateNuggetsCollected(int collected) 
-{
-    char message[45];
-    snprintf(message, sizeof(message), "You collected %d nuggets!", collected);
-
-    append_to_banner(message);
-}
-
-static bool 
-validateGoldCount(const int count) 
-{
-    return count > 0 && count <= MAXIMUM_GOLD;
-}
-
-static bool
-validatePlayerSymbol(const char symbol)
-{
-    return symbol >= 'A' && symbol <= 'Z';
 }
 
 static int

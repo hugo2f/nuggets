@@ -42,10 +42,12 @@ init_curses(int nrows, int ncols)
 static void 
 setupScreenSize(int nrows, int ncols)
 {
-    int nrowsScreen = 0;
-    int ncolsScreen = 0;
+    struct winsize w;
+    ioctl(0, TIOCGWINSZ, &w);
+    int nrowsScreen = w.ws_row;
+    int ncolsScreen = w.ws_col;
 
-    if (nrows >= nrowsScreen || ncols >= ncolsScreen) {
+    if (nrows > nrowsScreen || ncols > ncolsScreen) {
         printf("Expand window to %d rows by %d columns\n", nrows, ncols);
         fflush(stdout);
     }
