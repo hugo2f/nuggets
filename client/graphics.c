@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <ncurses.h>
+#include <sys/ioctl.h>
 #include "graphics.h"
 
 typedef struct {
@@ -13,6 +14,7 @@ typedef struct {
     int ncols;
 } Display;
 
+static void setupScreenSize();
 static void moveToNormalBannerEnd();
 
 Display display = {0, 0, 0};
@@ -21,17 +23,8 @@ bool
 init_curses(int nrows, int ncols)
 {
     initscr();
-    int nrowsScreen, ncolsScreen;
-    getmaxyx(stdscr, nrowsScreen, ncolsScreen);
-    
-    if (nrows >= nrowsScreen || ncols >= ncolsScreen) {
-        return false;
-    }
 
-    display.nrowsScreen = nrowsScreen;
-    display.ncolsScreen = ncolsScreen;
-    display.nrows = nrows;
-    display.ncols = ncols;
+    setupScreenSize(nrows, ncols);
 
     cbreak();
     noecho();
@@ -44,6 +37,32 @@ init_curses(int nrows, int ncols)
     attron(COLOR_PAIR(1));
 
     return true;
+}
+
+static void 
+setupScreenSize(int nrows, int ncols)
+{
+    int nrowsScreen = 0; 
+    int ncolsScreen = 0;
+
+    while (nrows >= nrowsScreen || ncols >= ncolsScreen) {
+        struct winsize w;
+        ioctl(0, TIOCGWINSZ, &w);
+        nrowsScreen = w.ws_row;
+        ncolsScreen = w.ws_col;
+        
+        endwin();
+        clear();
+        refresh();
+        printw("Please expand your terminal window and press any key to procede\n");
+        refresh();
+        getch();
+    }
+
+    display.nrowsScreen = nrowsScreen;
+    display.ncolsScreen = ncolsScreen;
+    display.nrows = nrows;
+    display.ncols = ncols;
 }
 
 void

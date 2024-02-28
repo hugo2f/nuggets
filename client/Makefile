@@ -3,9 +3,9 @@
 S = ../support
 LLIBS = $(S)/support.a
 LIBS = -lm -lcurses
-MINICLIENT_TEST=-DMINICLIENT_TEST
+MINISERVER_TEST=-DMINISERVER_TEST
 
-CFLAGS = -Wall -pedantic -std=c11 -ggdb $(LOGGING) $(MINICLIENT_TEST) -I$(S) $(FLAGS)
+CFLAGS = -Wall -pedantic -std=c11 -ggdb $(LOGGING) $(MINISERVER_TEST) -I$(S) $(FLAGS)
 
 CC = gcc
 
