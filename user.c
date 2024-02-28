@@ -16,12 +16,12 @@ typedef struct user {
   int col;
   bool active;
 } user_t;
-
+/*
 static void moveLeft(user_t*);
 static void moveRight(user_t*);
 static void moveUp(user_t*);
 static void moveDown(user_t*);
-
+*/
 user_t* user_new(char ID, GameMap* map, int gold, char* realName, int row, int col)
 {
   user_t* user = malloc(sizeof(user_t));
@@ -106,19 +106,31 @@ void user_move(user_t* user, char command)
 } 
 */
       
-char getCharacterID(user)
+char getCharacterID(user_t* user)
 {
   return user->characterID;
 }
 
-bool user_isActive(user)
+bool user_isActive(user_t* user)
 {
   return user->active;
 }
 
-void user_inActive(user)
+void user_inActive(user_t* user)
 {
   user->active = false;
+}
+
+int user_getGold(user_t* user)
+{
+  return user->gold;
+}
+
+void user_delete(user_t* user)
+{
+  if(user!= NULL){  
+    free(user);
+  }
 }
 /*
 
