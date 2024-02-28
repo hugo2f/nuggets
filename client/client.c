@@ -46,7 +46,7 @@ static int getMapSize();
 
 ClientData client = {NULL, '\0', 0, 0, CLIENT_PRE_INIT};
 
-const int MAXIMUM_NAME_LENGTH;
+const int MAXIMUM_NAME_LENGTH = 50;
 const int MAXIMUM_GOLD = 1000;
 const int MAXIMUM_MAP_SIZE = 2500;
 
@@ -170,7 +170,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         int mapsize = getMapSize();
         
         char map[mapsize];
-        if (sscanf(message, "%*s %99[^\n]", map) != 1) {
+        if (sscanf(message, "%*s %[^\n]", map) != 1) {
             fprintf(stderr, "Failed to retrieve map from DISPLAY message\n");
             sendReceipt(&from);
             return false;
@@ -188,7 +188,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
 static void
 sendReceipt(addr_t* serverp) 
 {
-    #ifdef MINICLIENT_TEST
+    #ifdef MINISERVER_TEST
 	if (client.state != CLIENT_PLAY && client.state != CLIENT_PRE_INIT) {
         message_send(*serverp, "RECEIVED");
     }
@@ -246,9 +246,10 @@ sendKey(addr_t* serverp, char key)
 static void 
 handleOkay(char* symbol) 
 {
+    int errors = 0;
     if (client.state != CLIENT_START_SENT) {
         fprintf(stderr, "Received OK again or prior to sending START\n");
-        return;
+        errors++;
     }
 
     if (strlen(symbol) > 1) {
@@ -259,6 +260,10 @@ handleOkay(char* symbol)
     
     if (!validatePlayerSymbol(symbolCharacter)) {
         fprintf(stderr, "Received invalid player symbol\n");
+        errors++;
+    }
+
+    if (errors != 0) {
         return;
     }
 
@@ -270,23 +275,23 @@ handleOkay(char* symbol)
 static void 
 handleGrid(char* coordinates) 
 {
+    int errors = 0;
     if (client.state != CLIENT_OKAY_RECEIVED) {
         fprintf(stderr, "Received GRID prior to receiving OK\n");
-        return;
+        errors++;
     }
 
     int nrows, ncols;
     if (sscanf(coordinates, "%d %d", &nrows, &ncols) != 2) {
         fprintf(stderr, "GRID message missing data\n");
+        errors++;
+    }
+
+    if (errors != 0) {
         return;
     }
 
-    if (!init_curses(nrows, ncols)) {
-        printf("You must enlarge the window to at least %d %d!\n", nrows, ncols);
-        fflush(stdout);
-    }
-
-    while (!init_curses(nrows, ncols));
+    init_curses(nrows, ncols);
 
     client.nrows = nrows;
     client.ncols = ncols;
@@ -310,18 +315,23 @@ handleGold(char* counts)
         return;
     }
 
+    int errors = 0;
     if (!validateGoldCount(collected)) {
-        fprintf(stderr, "Invalid 'collected' gold count %d", collected);
-        return;
+        fprintf(stderr, "Invalid 'collected' gold count %d\n", collected);
+        errors++;
     }
 
     if (!validateGoldCount(current)) {
-        fprintf(stderr, "Invalid 'current' gold count %d", current);
-        return;
+        fprintf(stderr, "Invalid 'current' gold count %d\n", current);
+        errors++;
     }
 
     if (!validateGoldCount(remaining)) {
-        fprintf(stderr, "Invalid 'remaining' gold count %d", remaining);
+        fprintf(stderr, "Invalid 'remaining' gold count %d\n", remaining);
+        errors++;
+    }
+
+    if (errors != 0) {
         return;
     }
 
