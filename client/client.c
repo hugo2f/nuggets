@@ -85,7 +85,7 @@ respondToInput(void* server)
 
     const char* validInputs = (client.playerName == NULL) ? SPECTATOR_KEYSTROKES : PLAYER_KEYSTROKES;
 
-    int input = getch();
+    int input = get_character();
     
     if (strchr(validInputs, input) != NULL) {
         send_key(serverp, input);

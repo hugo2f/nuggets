@@ -147,6 +147,12 @@ display_map(char* map)
     refresh();
 }
 
+char
+get_character()
+{
+    return getch();
+}
+
 void
 end_curses() 
 {
