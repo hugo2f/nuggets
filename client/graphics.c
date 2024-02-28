@@ -22,9 +22,9 @@ Display display = {0, 0, 0};
 bool
 init_curses(int nrows, int ncols)
 {
-    initscr();
-
     setupScreenSize(nrows, ncols);
+    
+    initscr();
 
     cbreak();
     noecho();
@@ -42,21 +42,21 @@ init_curses(int nrows, int ncols)
 static void 
 setupScreenSize(int nrows, int ncols)
 {
-    int nrowsScreen = 0; 
-    int ncolsScreen = 0;
+    struct winsize w;
+    ioctl(0, TIOCGWINSZ, &w);
+    int nrowsScreen = w.ws_row;
+    int ncolsScreen = w.ws_col;
 
+    if (nrows > nrowsScreen || ncols > ncolsScreen) {
+        printf("Expand window to %d rows by %d columns\n", nrows, ncols);
+        fflush(stdout);
+    }
+    
     while (nrows >= nrowsScreen || ncols >= ncolsScreen) {
         struct winsize w;
         ioctl(0, TIOCGWINSZ, &w);
         nrowsScreen = w.ws_row;
         ncolsScreen = w.ws_col;
-        
-        endwin();
-        clear();
-        refresh();
-        printw("Please expand your terminal window and press any key to procede\n");
-        refresh();
-        getch();
     }
 
     display.nrowsScreen = nrowsScreen;
