@@ -68,43 +68,39 @@ void stealGold(user_t* user1, user_t* user2)
   user2->gold = user2->gold - stolen;
 }
 
-/*
-void user_move(user_t* user, char command)
+
+void user_move(user_t* user, char command, GameMap* map, user_t* users[])
 {
   if(user != NULL){
     if(user->active){
       if(command == 'h'){
-        moveLeft(user);
+        moveLeft(user, map, users);
       }
       else if(command == 'l'){
-        moveRight(user);
+        moveRight(user, map, users);
       }
       else if(command == 'j'){
-        moveDown(user);
+        moveDown(user, map, users);
       }
       else if(command == 'k'){
-        moveUp(user);
+        moveUp(user, map, users);
       }
       else if(command == 'y'){
-        moveUp(user);
-        moveLeft(user);
+        moveUpLeft(user, map, users);
       }
       else if(command == 'u'){
-        moveUp(user);
-        moveRight(user);
+        moveUpRight(user, map, users);
       }
       else if(command == 'b'){
-        moveDown(user);
-        moveLeft(user);
+        moveDownLeft(user, map, users);
       }
       else if(command == 'n'){
-        moveDown(user);
-        moveRight(user);
+        moveDownRight(user, map, users);
       }
     }
   }
 } 
-*/
+
       
 char getCharacterID(user_t* user)
 {
