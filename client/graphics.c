@@ -15,6 +15,7 @@ typedef struct {
 } Display;
 
 static void setupScreenSize(int nrows, int ncols);
+static void appendToBanner(char* message);
 static void moveToNormalBannerEnd();
 
 Display display = {0, 0, 0, 0};
@@ -39,30 +40,29 @@ init_curses(int nrows, int ncols)
     return true;
 }
 
-static void 
-setupScreenSize(int nrows, int ncols)
+void 
+display_map(char* map) 
 {
-    struct winsize w;
-    ioctl(0, TIOCGWINSZ, &w);
-    int nrowsScreen = w.ws_row;
-    int ncolsScreen = w.ws_col;
+    int x = 0;
+    int y = 1;
 
-    if (nrows > nrowsScreen || ncols > ncolsScreen) {
-        printf("Expand window to %d rows by %d columns\n", nrows, ncols);
-        fflush(stdout);
-    }
-    
-    while (nrows >= nrowsScreen || ncols >= ncolsScreen) {
-        struct winsize w;
-        ioctl(0, TIOCGWINSZ, &w);
-        nrowsScreen = w.ws_row;
-        ncolsScreen = w.ws_col;
+    for (int i = 0; i < strlen(map); i++) {
+        char c = map[i];
+
+        if (x >= display.ncols) {
+            x = 0;
+            y++;
+        }
+
+        if (y >= display.nrows + 1) {
+            break;
+        }
+
+        mvaddch(y, x, c);
+        x++;
     }
 
-    display.nrowsScreen = nrowsScreen;
-    display.ncolsScreen = ncolsScreen;
-    display.nrows = nrows;
-    display.ncols = ncols;
+    refresh();
 }
 
 void
@@ -97,8 +97,8 @@ indicate_invalid_key(const char key)
     char message[20];
     snprintf(message, sizeof(message), "Invalid keystroke %c", key);
 
-    remove_from_banner();
-    append_to_banner(message);
+    remove_indicator();
+    appendToBanner(message);
 }
 
 void
@@ -107,21 +107,12 @@ indicate_nuggets_collected(const int collected)
     char message[45];
     snprintf(message, sizeof(message), "You collected %d nuggets!", collected);
 
-    append_to_banner(message);
+    remove_indicator();
+    appendToBanner(message);
 }
 
 void 
-append_to_banner(char* message) 
-{
-    moveToNormalBannerEnd();
-
-    printw("%s", message);
-
-    refresh();
-}
-
-void 
-remove_from_banner()
+remove_indicator()
 {
     moveToNormalBannerEnd();
     
@@ -129,6 +120,54 @@ remove_from_banner()
         delch();
     }
     
+    refresh();
+}
+
+char
+get_character()
+{
+    return getch();
+}
+
+void
+end_curses() 
+{
+    endwin();
+}
+
+static void 
+setupScreenSize(int nrows, int ncols)
+{
+    struct winsize w;
+    ioctl(0, TIOCGWINSZ, &w);
+    int nrowsScreen = w.ws_row;
+    int ncolsScreen = w.ws_col;
+
+    if (nrows > nrowsScreen || ncols > ncolsScreen) {
+        printf("Expand window to %d rows by %d columns\n", nrows, ncols);
+        fflush(stdout);
+    }
+    
+    while (nrows >= nrowsScreen || ncols >= ncolsScreen) {
+        struct winsize w;
+        ioctl(0, TIOCGWINSZ, &w);
+        nrowsScreen = w.ws_row;
+        ncolsScreen = w.ws_col;
+    }
+
+    display.nrowsScreen = nrowsScreen;
+    display.ncolsScreen = ncolsScreen;
+    display.nrows = nrows;
+    display.ncols = ncols;
+}
+
+static void 
+appendToBanner(char* message) 
+{
+    moveToNormalBannerEnd();
+
+    printw("%s", message);
+
     refresh();
 }
 
@@ -148,41 +187,4 @@ moveToNormalBannerEnd()
 
     x++;
     move(y, ++x);
-}
-
-void 
-display_map(char* map) 
-{
-    int x = 0;
-    int y = 1;
-
-    for (int i = 0; i < strlen(map); i++) {
-        char c = map[i];
-
-        if (x >= display.ncols) {
-            x = 0;
-            y++;
-        }
-
-        if (y >= display.nrows + 1) {
-            break;
-        }
-
-        mvaddch(y, x, c);
-        x++;
-    }
-
-    refresh();
-}
-
-char
-get_character()
-{
-    return getch();
-}
-
-void
-end_curses() 
-{
-    endwin();
 }

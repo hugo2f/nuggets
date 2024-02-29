@@ -87,7 +87,7 @@ respondToInput(void* server)
     
     if (strchr(validInputs, input) != NULL) {
         send_key(serverp, input);
-        remove_from_banner();
+        remove_indicator();
     } else if (client.playerName != NULL) {
         indicate_invalid_key(input);
     }
