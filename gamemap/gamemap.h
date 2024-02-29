@@ -17,11 +17,58 @@
 /* Local types */
 typedef struct GameMap GameMap_t;
 
-// Getters
+// Getters and setters
 int getNumRows(GameMap_t* map);
 int getNumCols(GameMap_t* map);
 char** getGrid(GameMap_t* map);
 char** getGameGrid(GameMap_t* map);
+
+/*
+ * Get the type of cell at a coordinate
+ *
+ * Inputs:
+ *   map to get cell type from
+ *   row, col: coordinates of target cell
+ * 
+ * Returns:
+ *   the cell type
+ *   '\0' if (row, col) is not in the map
+ */
+char getCellType(GameMap_t* map, int row, int col);
+
+/*
+ * Get the terrain of cell at a coordinate.
+ * Same as getCellType, but for terrain
+ *
+ * Inputs:
+ *   map to get terrain type from
+ *   row, col: coordinates of target cell
+ * 
+ * Returns:
+ *   the cell terrain
+ *   '\0' if (row, col) is not in the map
+ */
+char getCellTerrain(GameMap_t* map, int row, int col);
+
+/*
+ * Set the type of cell at a coordinate
+ *
+ * Inputs:
+ *   map to update
+ *   type of cell to set to
+ *   row, col: coordinates of target cell
+ */
+void setCellType(GameMap_t* map, char type, int row, int col);
+
+/*
+ * (For use after a player moves from a cell)
+ * Restore a cell type to the map terrain at the cell
+ *
+ * Inputs:
+ *   map to update
+ *   row, col: coordinates of target cell
+ */
+void restoreCell(GameMap_t* map, int row, int col);
 
 /*
  * Loads a map file into a GameMap_t
@@ -53,39 +100,6 @@ void deleteGameMap(GameMap_t* map);
  *   numRows: number of rows in the grid
  */
 void deleteGrid(char** grid, int numRows);
-
-/*
- * Get the type of cell at a coordinate
- *
- * Inputs:
- *   map to get cell type from
- *   row, col: coordinates of target cell
- * 
- * Returns:
- *   the cell type
- *   '\0' if (row, col) is not in the map
- */
-char getCellType(GameMap_t* map, int row, int col);
-
-/*
- * Set the type of cell at a coordinate
- *
- * Inputs:
- *   map to update
- *   type of cell to set to
- *   row, col: coordinates of target cell
- */
-void setCellType(GameMap_t* map, char type, int row, int col);
-
-/*
- * (For use after a player moves from a cell)
- * Restore a cell type to the map terrain at the cell
- *
- * Inputs:
- *   map to update
- *   row, col: coordinates of target cell
- */
-void restoreCell(GameMap_t* map, int row, int col);
 
 /*
  * For a given coordinate, get a boolean version of the map.
@@ -164,5 +178,16 @@ void delete2DIntArr(int** arr, int numRows);
  * Prints out "map is NULL" if a null pointer is passed in
  */
 void printMap(GameMap_t* map);
+
+/*
+ * Returns whether a char is a wall ('|', '-', '+')
+ * 
+ * Inputs:
+ *   type: the char to check
+ * 
+ * Returns:
+ *   whether `type` is a wall
+ */
+bool isWall(char type);
 
 #endif // __GameMap_H__
