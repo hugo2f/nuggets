@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include "message.h"
-#include "indicators.h"
 #include "graphics.h"
 #include "senders.h"
 #include "handlers.h"
