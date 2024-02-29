@@ -14,7 +14,7 @@ typedef struct {
     int ncols;
 } Display;
 
-static void setupScreenSize();
+static void setupScreenSize(int nrows, int ncols);
 static void moveToNormalBannerEnd();
 
 Display display = {0, 0, 0, 0};
