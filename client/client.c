@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <ncurses.h>
 #include "message.h"
 #include "indicators.h"
 #include "graphics.h"
@@ -90,7 +89,7 @@ respondToInput(void* server)
     if (strchr(validInputs, input) != NULL) {
         send_key(serverp, input);
         remove_from_banner();
-    } else {
+    } else if (client.playerName != NULL) {
         indicate_invalid_key(input);
     }
 

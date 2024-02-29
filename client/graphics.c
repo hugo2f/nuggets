@@ -66,7 +66,7 @@ setupScreenSize(int nrows, int ncols)
 }
 
 void
-display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets)
+display_player_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets)
 {
     if (playerSymbol == '\0') {
         return;
@@ -80,6 +80,15 @@ display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets)
     mvprintw(0, 0, "%s", banner);
     
     refresh(); 
+}
+
+void 
+display_spectator_banner()
+{
+    move(0, 0);
+    clrtoeol();
+    mvprintw(0, 0, "Spectating");
+    refresh();
 }
 
 void 

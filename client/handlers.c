@@ -62,7 +62,11 @@ handle_grid(char* coordinates)
     client.nrows = nrows;
     client.ncols = ncols;
 
-    display_banner(client.playerSymbol, 0, 0);
+    if (client.playerName != NULL) {
+        display_player_banner(client.playerSymbol, 0, 0);
+    } else {
+        display_spectator_banner();
+    }
 
     client.state = CLIENT_GRID_RECEIVED;
 }
@@ -101,7 +105,7 @@ handle_gold(char* counts)
         return;
     }
 
-    display_banner(client.playerSymbol, current, remaining);
+    display_player_banner(client.playerSymbol, current, remaining);
     indicate_nuggets_collected(collected);
 }
 

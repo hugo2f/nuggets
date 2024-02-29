@@ -5,7 +5,9 @@
 
 bool init_curses(int nrows, int ncols);
 
-void display_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets);
+void display_player_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets);
+
+void display_spectator_banner();
 
 void append_to_banner(char* message);
 
