@@ -451,5 +451,5 @@ bool outOfMap(GameMap_t* map, int row, int col)
 
 bool isWall(char type)
 {
-  return (type == '|' || type == '-' || type == '+');
+  return (type == '|' || type == '-' || type == '+' || type == ' ');
 }
