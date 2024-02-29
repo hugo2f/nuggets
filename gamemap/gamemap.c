@@ -30,7 +30,14 @@ static const int dc[] = {1, 0, -1, 0};
 // sightRadius cells away in either direction)
 static const int sightRadius = 5;
 
-/* Local functions */
+// Helper functions
+void deleteGrid(char** grid, int numRows);
+void delete2DIntArr(int** arr, int numRows);
+int checkSquare(GameMap_t* map, int** visibleRegion, int idx,
+                int row, int col, int radius);
+static bool isVisible(GameMap_t* map, int r1, int c1, int r2, int c2);
+static bool outOfMap(GameMap_t* map, int row, int col);
+bool isWall(char type);
 
 // Getters
 int getNumRows(GameMap_t* map)
@@ -103,15 +110,6 @@ void restoreCell(GameMap_t* map, int row, int col)
   }
   map->gameGrid[row][col] = map->grid[row][col];
 }
-
-// Helper functions
-void deleteGrid(char** grid, int numRows);
-void delete2DIntArr(int** arr, int numRows);
-int checkSquare(GameMap_t* map, int** visibleRegion, int idx,
-                int row, int col, int radius);
-static bool isVisible(GameMap_t* map, int r1, int c1, int r2, int c2);
-static bool outOfMap(GameMap_t* map, int row, int col);
-static bool isWall(char type);
 
 GameMap_t* loadMapFile(char* mapFilePath)
 {
@@ -453,5 +451,5 @@ bool outOfMap(GameMap_t* map, int row, int col)
 
 bool isWall(char type)
 {
-  return (type == '+' || type == '-' || type == '|');
+  return (type == '|' || type == '-' || type == '+');
 }

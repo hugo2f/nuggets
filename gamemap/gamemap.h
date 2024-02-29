@@ -179,4 +179,15 @@ void delete2DIntArr(int** arr, int numRows);
  */
 void printMap(GameMap_t* map);
 
+/*
+ * Returns whether a char is a wall ('|', '-', '+')
+ * 
+ * Inputs:
+ *   type: the char to check
+ * 
+ * Returns:
+ *   whether `type` is a wall
+ */
+bool isWall(char type);
+
 #endif // __GameMap_H__
