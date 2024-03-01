@@ -5,16 +5,16 @@
 # Jaysen Quan, 2/21/2024
 #
 
-CFLAGS = -Wall -pedantic -std=c11 -ggdb -I../support -I../gamemap
+CFLAGS = -Wall -pedantic -std=c11 -ggdb -I../support -I../gamemap -Iplayer
 CC = gcc
-OBJS = server.o 
+OBJS = server.o
 
 LIBS = 
-LLIBS = ../support/support.a ../gamemap/gamemap.a
+LLIBS = ../support/support.a ../gamemap/gamemap.a player/player.a
 # TESTS =
 
 MAKE = make
-myvalgrind = valgrind --leak-check=full --show-leak-kinds=all
+VALGRIND = valgrind --leak-check=full --show-leak-kinds=all
 
 .PHONY: all test clean
 
@@ -22,6 +22,9 @@ all: server
 
 server: $(OBJS)
 	$(CC) $(CFLAGS) $^ $(LLIBS) $(LIBS) -o $@
+
+valgrind: server
+	$(VALGRIND) ./server 
 
 
 clean:
