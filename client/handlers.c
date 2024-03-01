@@ -98,38 +98,54 @@ handle_grid(char* coordinates)
 void 
 handle_gold(char* counts) 
 {
+    // ensure that client is currently running a game session (not initializing)
     if (client.state != CLIENT_PLAY) {
         fprintf(stderr, "Received GOLD prior to game start\n");
         return;
     }
 
+    // ensure that client is a player 
+    if (client.playerName != NULL) {
+        fprintf(stderr, "Received GOLD as Spectator\n");
+        return;
+    }
+
+    // extracts values from the gold data string, and ensures that three values were extracted, erroring if not
     int collected, current, remaining;
     if (sscanf(counts, "%d %d %d", &collected, &current, &remaining) != 3) {
         fprintf(stderr, "GOLD message missing data\n");
         return;
     }
 
-    int errors = 0;
+    int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
+    
+    // errors if the collected gold count received is unrealistic 
     if (!validate_gold_count(collected, MAXIMUM_GOLD)) {
         fprintf(stderr, "Invalid 'collected' gold count %d\n", collected);
         errors++;
     }
 
+    // errors if the current gold count received is unrealistic  
     if (!validate_gold_count(current, MAXIMUM_GOLD)) {
         fprintf(stderr, "Invalid 'current' gold count %d\n", current);
         errors++;
     }
 
+    // errors if the remaining gold count received is unrealistic 
     if (!validate_gold_count(remaining, MAXIMUM_GOLD)) {
         fprintf(stderr, "Invalid 'remaining' gold count %d\n", remaining);
         errors++;
     }
 
+    // ceases execution if error occured
     if (errors != 0) {
         return;
     }
 
+    // update banner with gold statistics
     display_player_banner(client.playerSymbol, current, remaining);
+    
+    // show message indicating that player collected nuggets
     indicate_nuggets_collected(collected);
 }
 
@@ -139,13 +155,16 @@ handle_gold(char* counts)
 void 
 handle_display(char* map) 
 {
+    // ensure that DISPLAY recevied either after GRID received or a during game session
     if (client.state != CLIENT_GRID_RECEIVED && client.state != CLIENT_PLAY) {
         fprintf(stderr, "Received DISPLAY prior to receiving GRID\n");
         return;
     }
 
+    // prints map to display
     display_map(map);
 
+    // advance client status iff game not yet started
     if (client.state != CLIENT_PLAY) {
         client.state = CLIENT_PLAY;
     }

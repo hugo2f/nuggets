@@ -6,9 +6,13 @@
 #include "clientdata.h"
 #include "senders.h"
 
+// function prototypes
 static void sendPlay(addr_t* serverp);
 static void sendSpectate(addr_t* serverp);  
 
+/*
+ * Sends "RECEIVED" to server; see .h for more details. 
+ */
 void
 send_receipt(addr_t* serverp) 
 {
@@ -21,6 +25,9 @@ send_receipt(addr_t* serverp)
 	#endif
 }
 
+/*
+ * Sends different start message to server depending on client type; see .h for more details. 
+ */
 bool 
 send_start(addr_t* serverp) 
 {
@@ -39,6 +46,9 @@ send_start(addr_t* serverp)
     return false;
 }
 
+/*
+ * Sends key to server; see .h for more details. 
+ */
 void 
 send_key(addr_t* serverp, char key) 
 {
@@ -51,6 +61,9 @@ send_key(addr_t* serverp, char key)
     message_send(*serverp, message);
 }
 
+/*
+ * Sends play message to server (the player start message); see .h for more details. 
+ */
 static void 
 sendPlay(addr_t* serverp) 
 {
@@ -59,6 +72,9 @@ sendPlay(addr_t* serverp)
     message_send(*serverp, message);
 }
 
+/*
+ * Sends spectate message to server (the spectator start message); see .h for more details. 
+ */
 static void 
 sendSpectate(addr_t* serverp) 
 {
