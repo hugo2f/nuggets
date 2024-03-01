@@ -4,6 +4,7 @@
  * Description: contains functions that send commands, namely PLAY, SPECTATE, KEY, and RECEIPT.
  * 
  * Author: Joseph Hirsh
+ * Date: March 1st, 2024
  * 
  */
 

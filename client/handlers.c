@@ -5,6 +5,7 @@
  * and ERROR.
  * 
  * Author: Joseph Hirsh
+ * Date: March 1st, 2024
  * 
  */
 
@@ -17,6 +18,7 @@
 #include "graphics.h"
 #include "validators.h"
 
+// function prototype
 int parseGoldCounts(char* counts, int* collected, int* current, int* remaining); 
 
 /*
@@ -157,6 +159,7 @@ handle_spectator_gold(char* collectionData)
         errors++;
     }
 
+    // extract symbol and everything else
     char counts[100];
     char collectorSymbol;
     if (sscanf(collectionData, "%c%[^\n]", &collectorSymbol, counts) != 2) {
@@ -164,6 +167,7 @@ handle_spectator_gold(char* collectionData)
         return;
     }
 
+    // ensure that the symbol is valid (capital and alphabetical)
     if (!validate_player_symbol(collectorSymbol)) {
         fprintf(stderr, "SPECTATOR_GOLD message contains invalid player symbol\n");
         errors++;
@@ -230,8 +234,9 @@ handle_error(char* error)
 int 
 parseGoldCounts(char* counts, int* collected, int* current, int* remaining) 
 {
-    int errors = 0;
-    
+    int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
+
+    // extracts collected, current, and remaining from counts into "collected", "current", and "remaining" parameters
     if (sscanf(counts, "%d %d %d", collected, current, remaining) != 3) {
         fprintf(stderr, "Gold data missing\n");
         errors++;

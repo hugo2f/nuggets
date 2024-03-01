@@ -1,3 +1,16 @@
+/*
+ * graphics.c
+ *
+ * Description: contains all the displaying and keyboard reading functions for the client. It initializes
+ * curses, ensuring valid dimensions, displays information on a top banner depending on whether the client
+ * is a spectator or player. It also displays various notifications on the banner (directly after it). It
+ * reads keyboard input and provdes an exit function.
+ * 
+ * Author: Joseph Hirsh
+ * Date: March 1st, 2024
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

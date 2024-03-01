@@ -1,3 +1,13 @@
+/*
+ * Description: contains the main control flow for the client, defining the global data, receiving 
+ * input from the user and messages from the server, and delegating the responses to various command 
+ * handlers and message senders (organized as such in seperate modules). 
+ * 
+ * Author: Joseph Hirsh
+ * Date: March 1st, 2024
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -8,20 +18,24 @@
 #include "handlers.h"
 #include "clientdata.h"
 
+// function prototypes
 static void parseArgs(int argc, char* argv[], addr_t* serverp);
 static bool respondToInput(void* server);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
-
 static void setPlayerName(char* name);
 static int getMapSize(); 
 
+// project-wide global client struct - type defined in clientdata.h 
 ClientData client = {NULL, '\0', 0, 0, CLIENT_PRE_INIT};
 
+// project-wide global constants
 const int MAXIMUM_NAME_LENGTH = 50;
 const int MAXIMUM_GOLD = 1000;
-const int MAXIMUM_MAP_SIZE = 2500;
-const char* PLAYER_KEYSTROKES = "qQhHlLjJkKyYuUnNbB";
-const char* SPECTATOR_KEYSTROKES = "qQ";
+const int MAXIMUM_MAP_SIZE = 2500; // as area
+
+// file-scoped global constants
+const char* PLAYER_KEYSTROKES = "qQhHlLjJkKyYuUnNbB"; // all valid keystrokes as player
+const char* SPECTATOR_KEYSTROKES = "qQ"; // all valid keystrokes as spectator
 
 int 
 main(int argc, char* argv[]) 
