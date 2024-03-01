@@ -98,16 +98,18 @@ handle_grid(char* coordinates)
 void 
 handle_gold(char* counts) 
 {
+    int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
+
     // ensure that client is currently running a game session (not initializing)
     if (client.state != CLIENT_PLAY) {
         fprintf(stderr, "Received GOLD prior to game start\n");
-        return;
+        errors++;
     }
 
     // ensure that client is a player 
-    if (client.playerName != NULL) {
+    if (client.playerName == NULL) {
         fprintf(stderr, "Received GOLD as Spectator\n");
-        return;
+        errors++;
     }
 
     // extracts values from the gold data string, and ensures that three values were extracted, erroring if not
@@ -116,8 +118,6 @@ handle_gold(char* counts)
         fprintf(stderr, "GOLD message missing data\n");
         return;
     }
-
-    int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
     
     // errors if the collected gold count received is unrealistic 
     if (!validate_gold_count(collected, MAXIMUM_GOLD)) {

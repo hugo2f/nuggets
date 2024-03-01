@@ -15,35 +15,41 @@ static void sendSpectate(addr_t* serverp);
  */
 void
 send_receipt(addr_t* serverp) 
-{
+{  
+    // we only require this method when testing against the miniserver, thus this method uses
+    // a preprocessor directive such that the client can be compiled for miniserver testing or as the final
+    // product
     #ifdef MINISERVER_TEST
-	if (client.state != CLIENT_PLAY && client.state != CLIENT_PRE_INIT) {
+	// we only send receipts during initialization
+    if (client.state != CLIENT_PLAY && client.state != CLIENT_PRE_INIT) {
         message_send(*serverp, "RECEIVED");
     }
 	#else
 	;
-	#endif
+	#endif /* MINISERVER_TEST */
 }
 
 /*
  * Sends different start message to server depending on client type; see .h for more details. 
  */
-bool 
+void 
 send_start(addr_t* serverp) 
 {
+    // ensures that we are not sending start a second time
     if (client.state != CLIENT_PRE_INIT) {
         fprintf(stderr, "Sent START again\n");
-        return true;
+        return;
     }
 
+    // sends start message to server depending on client type
     if (client.playerName == NULL) {
         sendSpectate(serverp);
     } else {
         sendPlay(serverp);
     }
 
+    // advance client state
     client.state = CLIENT_START_SENT;
-    return false;
 }
 
 /*
@@ -52,12 +58,16 @@ send_start(addr_t* serverp)
 void 
 send_key(addr_t* serverp, char key) 
 {
+    // ensures client is currently running a game session
     if (client.state != CLIENT_PLAY) {
         return;
     }
 
+    // create key send message
     char message[6];
     snprintf(message, sizeof(message), "KEY %c", key);
+    
+    // send message to server
     message_send(*serverp, message);
 }
 
@@ -67,8 +77,11 @@ send_key(addr_t* serverp, char key)
 static void 
 sendPlay(addr_t* serverp) 
 {
+    // create play message (the player start message)
     char message[MAXIMUM_NAME_LENGTH + 5];
     snprintf(message, sizeof(message), "PLAY %s", client.playerName);
+    
+    // send message to server
     message_send(*serverp, message);
 }
 
@@ -78,5 +91,6 @@ sendPlay(addr_t* serverp)
 static void 
 sendSpectate(addr_t* serverp) 
 {
+    // send spectator start message to server
     message_send(*serverp, "SPECTATE");
 }
