@@ -9,11 +9,13 @@ void display_map(char* map);
 
 void display_player_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets);
 
-void display_spectator_banner();
+void display_spectator_banner(const int remaining);
 
 void indicate_invalid_key(const char key);
 
-void indicate_nuggets_collected(const int collected);
+void indicate_nuggets_collected_player(const int collected);
+
+void indicate_nuggets_collected_spectator(const char symbol, const int collected);
 
 void remove_indicator();
 

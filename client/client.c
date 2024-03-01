@@ -104,9 +104,9 @@ handleMessage(void* arg, const addr_t from, const char* message)
         return false;
     }
 
-    char messageHeader[10];
+    char messageHeader[25];
     char remainder[100];
-    if (sscanf(message, "%9s %99[^\n]", messageHeader, remainder) != 2) {
+    if (sscanf(message, "%24s %99[^\n]", messageHeader, remainder) != 2) {
         fprintf(stderr, "Received message with invalid format\n");
         send_receipt((addr_t *)&from);
         return false;
@@ -122,6 +122,8 @@ handleMessage(void* arg, const addr_t from, const char* message)
         handle_quit(remainder);
     } else if (strcmp(messageHeader, "ERROR") == 0) {
         handle_error(remainder);
+    } else if (strcmp(messageHeader, "SPECTATOR_GOLD") == 0) {
+        handle_spectator_gold(remainder);
     } else if (strcmp(messageHeader, "DISPLAY") == 0) {
         int mapsize = getMapSize();
         

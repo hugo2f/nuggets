@@ -1,3 +1,11 @@
+/*
+ * validators.c
+ *
+ * Description: contains function to validate values recevied by server, namely the gold counts and
+ * player syumbol.
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>

@@ -83,11 +83,11 @@ display_player_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets
 }
 
 void 
-display_spectator_banner()
+display_spectator_banner(const int remaining)
 {
     move(0, 0);
     clrtoeol();
-    mvprintw(0, 0, "Spectating");
+    mvprintw(0, 0, "Spectating: %d gold remaining.", remaining);
     refresh();
 }
 
@@ -102,12 +102,21 @@ indicate_invalid_key(const char key)
 }
 
 void
-indicate_nuggets_collected(const int collected) 
+indicate_nuggets_collected_player(const int collected) 
 {
     char message[45];
     snprintf(message, sizeof(message), "You collected %d nuggets!", collected);
 
     remove_indicator();
+    appendToBanner(message);
+}
+
+void
+indicate_nuggets_collected_spectator(const char symbol, const int collected)
+{
+    char message[45];
+    snprintf(message, sizeof(message), "Player %c collected %d nuggets!", symbol, collected);
+
     appendToBanner(message);
 }
 

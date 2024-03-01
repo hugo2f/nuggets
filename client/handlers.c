@@ -1,3 +1,13 @@
+/*
+ * handlers.c
+ *
+ * Description: contains functions that handle individual commands, namely OK, GRID, GOLD, DISPLAY, QUIT,
+ * and ERROR.
+ * 
+ * Author: Joseph Hirsh
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -6,6 +16,8 @@
 #include "handlers.h"
 #include "graphics.h"
 #include "validators.h"
+
+int parseGoldCounts(char* counts, int* collected, int* current, int* remaining); 
 
 /*
  * Runs upon receiving message from server with the OK header; see .h for more details.
@@ -85,7 +97,7 @@ handle_grid(char* coordinates)
     if (client.playerName != NULL) {
         display_player_banner(client.playerSymbol, 0, 0);
     } else {
-        display_spectator_banner();
+        display_spectator_banner(250);
     }
 
     // advance game state
@@ -114,39 +126,63 @@ handle_gold(char* counts)
 
     // extracts values from the gold data string, and ensures that three values were extracted, erroring if not
     int collected, current, remaining;
-    if (sscanf(counts, "%d %d %d", &collected, &current, &remaining) != 3) {
-        fprintf(stderr, "GOLD message missing data\n");
+    errors += parseGoldCounts(counts, &collected, &current, &remaining);
+
+    // ceases execution if error occured
+    if (errors > 0) {
         return;
     }
     
-    // errors if the collected gold count received is unrealistic 
-    if (!validate_gold_count(collected, MAXIMUM_GOLD)) {
-        fprintf(stderr, "Invalid 'collected' gold count %d\n", collected);
-        errors++;
-    }
-
-    // errors if the current gold count received is unrealistic  
-    if (!validate_gold_count(current, MAXIMUM_GOLD)) {
-        fprintf(stderr, "Invalid 'current' gold count %d\n", current);
-        errors++;
-    }
-
-    // errors if the remaining gold count received is unrealistic 
-    if (!validate_gold_count(remaining, MAXIMUM_GOLD)) {
-        fprintf(stderr, "Invalid 'remaining' gold count %d\n", remaining);
-        errors++;
-    }
-
-    // ceases execution if error occured
-    if (errors != 0) {
-        return;
-    }
-
     // update banner with gold statistics
     display_player_banner(client.playerSymbol, current, remaining);
     
     // show message indicating that player collected nuggets
-    indicate_nuggets_collected(collected);
+    indicate_nuggets_collected_player(collected);
+}
+
+void
+handle_spectator_gold(char* collectionData)
+{
+    int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
+
+    // ensure that client is currently running a game session (not initializing)
+    if (client.state != CLIENT_PLAY) {
+        fprintf(stderr, "Received SPECTATOR_GOLD prior to game start\n");
+        errors++;
+    }
+
+    // ensure that client is a player 
+    if (client.playerName != NULL) {
+        fprintf(stderr, "Received SPECTATOR_GOLD as Player\n");
+        errors++;
+    }
+
+    char counts[100];
+    char collectorSymbol;
+    if (sscanf(collectionData, "%c%[^\n]", &collectorSymbol, counts) != 2) {
+        fprintf(stderr, "SPECTATOR_GOLD message missing data\n");
+        return;
+    }
+
+    if (!validate_player_symbol(collectorSymbol)) {
+        fprintf(stderr, "SPECTATOR_GOLD message contains invalid player symbol\n");
+        errors++;
+    }
+
+    // extracts values from the gold data string, and ensures that three values were extracted, erroring if not
+    int collected, current, remaining;
+    errors += parseGoldCounts(counts, &collected, &current, &remaining);
+
+    // ceases execution if error occured
+    if (errors > 0) {
+        return;
+    }
+    
+    // update banner with gold statistics
+    display_spectator_banner(remaining);
+    
+    // show message indicating that player collected nuggets
+    indicate_nuggets_collected_spectator(collectorSymbol, collected);
 }
 
 /*
@@ -189,4 +225,36 @@ void
 handle_error(char* error) 
 {
     fprintf(stderr, "ERROR %s\n", error);
+}
+
+int 
+parseGoldCounts(char* counts, int* collected, int* current, int* remaining) 
+{
+    int errors = 0;
+    
+    if (sscanf(counts, "%d %d %d", collected, current, remaining) != 3) {
+        fprintf(stderr, "Gold data missing\n");
+        errors++;
+        return errors;
+    }
+    
+    // errors if the collected gold count received is unrealistic 
+    if (!validate_gold_count(*collected, MAXIMUM_GOLD)) {
+        fprintf(stderr, "Invalid 'collected' gold count %d\n", *collected);
+        errors++;
+    }
+
+    // errors if the current gold count received is unrealistic  
+    if (!validate_gold_count(*current, MAXIMUM_GOLD)) {
+        fprintf(stderr, "Invalid 'current' gold count %d\n", *current);
+        errors++;
+    }
+
+    // errors if the remaining gold count received is unrealistic 
+    if (!validate_gold_count(*remaining, MAXIMUM_GOLD)) {
+        fprintf(stderr, "Invalid 'remaining' gold count %d\n", *remaining);
+        errors++;
+    }
+
+    return errors;
 }
