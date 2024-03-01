@@ -117,6 +117,7 @@ indicate_nuggets_collected_spectator(const char symbol, const int collected)
     char message[45];
     snprintf(message, sizeof(message), "Player %c collected %d nuggets!", symbol, collected);
 
+    remove_indicator();
     appendToBanner(message);
 }
 
