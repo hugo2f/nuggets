@@ -377,7 +377,7 @@ int** getRoomCells(GameMap_t* map)
   // loop through the room
   for (int row = 0; row < map->numRows; row++) {
     for (int col = 0; col < map->numCols; col++) {
-      if (map->grid[row][col] == '.') {
+      if (map->gameGrid[row][col] == '.') {
         // each row has two ints for (row, col)
         res[idx] = malloc(2 * sizeof(int));
         if (res[idx] == NULL) {
