@@ -103,134 +103,196 @@ display_map(char* map)
     refresh();
 }
 
+/*
+ * Displays banner for client in player mode; see .h for more details. 
+ */
 void
 display_player_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets)
 {
+    // ensure the player symbol is not the null terminator (this should really never happen due to other 
+    // defensive code)
     if (playerSymbol == '\0') {
         return;
     }
     
-    move(0, 0);
-    clrtoeol();
     
+    move(0, 0); // move to top left of the screen
+    clrtoeol(); // clear to end of line
+    
+    // create banner string
     char banner[client.ncolsScreen];
     snprintf(banner, sizeof(banner), "Player %c has %d nuggets (%d nuggets unclaimed).", playerSymbol, playerNuggets, unclaimedNuggets);
+    
+    // print banner string 
     mvprintw(0, 0, "%s", banner);
     
+    // update display with new changes
     refresh(); 
 }
 
+/*
+ * Displays banner for client in spectator mode; see .h file for more details.
+ */
 void 
 display_spectator_banner(const int remaining)
 {
-    move(0, 0);
-    clrtoeol();
-    mvprintw(0, 0, "Spectating: %d gold remaining.", remaining);
-    refresh();
+    
+    move(0, 0); // move to top left of the screen
+    clrtoeol(); // clear to end of line
+    mvprintw(0, 0, "Spectating: %d gold remaining.", remaining); // print banner string 
+    refresh(); // update display with new changes
 }
 
+/*
+ * Displays message after basic banner indicating invalid key press; see .h for more details. 
+ */
 void 
 indicate_invalid_key(const char key) 
 {
+    // create invalid keystroke indicator message
     char message[20];
     snprintf(message, sizeof(message), "Invalid keystroke %c", key);
 
-    remove_indicator();
+    // display it on first line after the basic banner
+    remove_indicator(); // clears any current indicator messages
     appendToBanner(message);
 }
 
+/*
+ * Displays message after basic banner indicating that you nuggets collected; see .h for more details. 
+ */
 void
 indicate_nuggets_collected_player(const int collected) 
 {
+    // create you collected nuggets indicator message
     char message[45];
     snprintf(message, sizeof(message), "You collected %d nuggets!", collected);
 
-    remove_indicator();
+    // display it on first line after the basic banner
+    remove_indicator(); // clears any current indicator messages
     appendToBanner(message);
 }
 
+/*
+ * Displays message after basic banner indicating someone else collected nuggets; see .h for more details. 
+ */
 void
 indicate_nuggets_collected_spectator(const char symbol, const int collected)
 {
+    // create someone else collected nuggets indicator message
     char message[45];
     snprintf(message, sizeof(message), "Player %c collected %d nuggets!", symbol, collected);
 
-    remove_indicator();
+    // display it on first line after the basic banner
+    remove_indicator();  // clears any current indicator messages
     appendToBanner(message);
 }
 
+/*
+ * Removes whatever special indicator message is added after basic banner; see .h for more details.
+ */
 void 
 remove_indicator()
 {
+    // moves cursor to banner end
     moveToNormalBannerEnd();
     
+    // deletes everything after until end of screen
     for (int i = 0; i <= client.ncolsScreen; i++) {
         delch();
     }
     
+    // update display with new changes
     refresh();
 }
 
+/*
+ * Gets keypress; see .h for more details.
+ */
 char
 get_character()
 {
     return getch();
 }
 
+/*
+ * Shuts down all graphics; see .h for more details.
+ */
 void
 end_curses() 
 {
     endwin();
 }
 
+/*
+ * Ensures window size is sufficently large to accomodate the board, prompts user to expand window and
+ * waits if not.
+ */
 static void 
 setupScreenSize(int nrows, int ncols)
 {
+    // checks the size of the terminal window
     struct winsize w;
-    ioctl(0, TIOCGWINSZ, &w);
-    int nrowsScreen = w.ws_row;
-    int ncolsScreen = w.ws_col;
+    ioctl(0, TIOCGWINSZ, &w); // aquire the terminal window size
+    int nrowsScreen = w.ws_row; // number of rows in the terminal window
+    int ncolsScreen = w.ws_col; // number of columns in the terminal window
 
+    // If the expected size is larger than the actual terminal window size, print a message
     if (nrows > nrowsScreen || ncols > ncolsScreen) {
-        printf("Expand window to %d rows by %d columns\n", nrows, ncols);
-        fflush(stdout);
+        printf("Expand window to %d rows by %d columns\n", nrows, ncols); // prompts user to expand window
+        fflush(stdout); // flush the output buffer
     }
-    
+
+    // loop continuously checking the window size until it is large enough
     while (nrows >= nrowsScreen || ncols >= ncolsScreen) {
         struct winsize w;
-        ioctl(0, TIOCGWINSZ, &w);
-        nrowsScreen = w.ws_row;
-        ncolsScreen = w.ws_col;
+        ioctl(0, TIOCGWINSZ, &w); // reaquire the terminal window size
+        nrowsScreen = w.ws_row; // update nrowsScreen for next check
+        ncolsScreen = w.ws_col; // update ncolsScreen for next check
     }
 
+    // after the loop, update the screen dimensions in the client structure
     client.nrowsScreen = nrowsScreen;
     client.ncolsScreen = ncolsScreen;
 }
 
+/*
+ * Adds text to the end of the banner.
+ */
 static void 
 appendToBanner(char* message) 
 {
+    // moves cursor to banner end
     moveToNormalBannerEnd();
 
+    // prints message there
     printw("%s", message);
 
+    // update display with new changes
     refresh();
 }
 
+/*
+ * Moves cursor to end of banner (such that the next print or delete starts there).
+ */
 static void
 moveToNormalBannerEnd() 
 {
+    // move to top left of the screen
     move(0, 0);
     
-    int y, x;
-    getyx(stdscr, y, x);
-    
+    // start x and y at zero
+    int x = 0;
+    int y = 0;
+
+    // walk to end of banner where a period indicates the end
     char ch;
     while ((ch = inch()) != '.') {
         x++;
         move(y, x);
     }
 
+    // take another two steps forward;
     x++;
     move(y, ++x);
 }
