@@ -7,6 +7,8 @@ void handle_grid(char* coordinates);
 
 void handle_gold(char* counts);
 
+void handle_spectator_gold(char* collectionData);
+
 void handle_display(char* map); 
 
 void handle_quit(char* explanation);

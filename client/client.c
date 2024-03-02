@@ -1,29 +1,41 @@
+/*
+ * Description: contains the main control flow for the client, defining the global data, receiving 
+ * input from the user and messages from the server, and delegating the responses to various command 
+ * handlers and message senders (organized as such in seperate modules). 
+ * 
+ * Author: Joseph Hirsh
+ * Date: March 1st, 2024
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <ncurses.h>
 #include "message.h"
-#include "indicators.h"
 #include "graphics.h"
 #include "senders.h"
 #include "handlers.h"
 #include "clientdata.h"
 
+// function prototypes
 static void parseArgs(int argc, char* argv[], addr_t* serverp);
 static bool respondToInput(void* server);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
-
 static void setPlayerName(char* name);
 static int getMapSize(); 
 
+// project-wide global client struct - type defined in clientdata.h 
 ClientData client = {NULL, '\0', 0, 0, CLIENT_PRE_INIT};
 
+// project-wide global constants
 const int MAXIMUM_NAME_LENGTH = 50;
 const int MAXIMUM_GOLD = 1000;
-const int MAXIMUM_MAP_SIZE = 2500;
-const char* PLAYER_KEYSTROKES = "qQhHlLjJkKyYuUnNbB";
-const char* SPECTATOR_KEYSTROKES = "qQ";
+const int MAXIMUM_MAP_SIZE = 2500; // as area
+
+// file-scoped global constants
+const char* PLAYER_KEYSTROKES = "qQhHlLjJkKyYuUnNbB"; // all valid keystrokes as player
+const char* SPECTATOR_KEYSTROKES = "qQ"; // all valid keystrokes as spectator
 
 int 
 main(int argc, char* argv[]) 
@@ -89,8 +101,8 @@ respondToInput(void* server)
     
     if (strchr(validInputs, input) != NULL) {
         send_key(serverp, input);
-        remove_from_banner();
-    } else {
+        remove_indicator();
+    } else if (client.playerName != NULL) {
         indicate_invalid_key(input);
     }
 
@@ -106,9 +118,9 @@ handleMessage(void* arg, const addr_t from, const char* message)
         return false;
     }
 
-    char messageHeader[10];
+    char messageHeader[25];
     char remainder[100];
-    if (sscanf(message, "%9s %99[^\n]", messageHeader, remainder) != 2) {
+    if (sscanf(message, "%24s %99[^\n]", messageHeader, remainder) != 2) {
         fprintf(stderr, "Received message with invalid format\n");
         send_receipt((addr_t *)&from);
         return false;
@@ -124,6 +136,8 @@ handleMessage(void* arg, const addr_t from, const char* message)
         handle_quit(remainder);
     } else if (strcmp(messageHeader, "ERROR") == 0) {
         handle_error(remainder);
+    } else if (strcmp(messageHeader, "SPECTATOR_GOLD") == 0) {
+        handle_spectator_gold(remainder);
     } else if (strcmp(messageHeader, "DISPLAY") == 0) {
         int mapsize = getMapSize();
         
