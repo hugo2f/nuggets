@@ -1,3 +1,13 @@
+/*
+ * senders.h
+ *
+ * Description: contains interface for sender functions.
+ * 
+ * Author: Joseph Hirsh
+ * Date: March 2st, 2024
+ * 
+ */
+
 #ifndef _SENDERS_H_
 #define _SENDERS_H_
 

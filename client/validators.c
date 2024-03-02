@@ -33,7 +33,7 @@ validate_player_symbol(const char symbol)
 }
 
 /*
- * Ensure input character is not stdin end of file 
+ * Ensure input character is not stdin end of file (EOF)
  */
 bool
 validate_stdin_character(const char stdinCharacter)
