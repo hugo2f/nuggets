@@ -19,62 +19,87 @@
 #include <ncurses.h>
 #include <sys/ioctl.h>
 #include "graphics.h"
+#include "clientdata.h"
 
-typedef struct {
-    int nrowsScreen;
-    int ncolsScreen;
-    int nrows;
-    int ncols;
-} Display;
-
+// function prototypes
 static void setupScreenSize(int nrows, int ncols);
 static void appendToBanner(char* message);
 static void moveToNormalBannerEnd();
 
-Display display = {0, 0, 0, 0};
-
+/*
+ * Initialize curses; see .h for more details. 
+ */
 bool
 init_curses(int nrows, int ncols)
 {
+    // ensures window size is large enough, prompts user to expand it and waits if not
     setupScreenSize(nrows, ncols);
     
+    // initialize the curses library
     initscr();
 
+    // enable character input to be read one character at a time
     cbreak();
+
+    // disable automatic echoing of characters typed by the user
     noecho();
+
+    // enable non-blocking input mode
     nodelay(stdscr, TRUE);
+
+    // enable the keypad for interpreting special keys
     keypad(stdscr, TRUE);
+
+    // flush any pending input
     flushinp();
 
+    // start color mode
     start_color();
-    init_pair(1, COLOR_WHITE, COLOR_BLACK);
+
+    // initialize color pair one with white foreground and black background
+    init_pair(1, FOREGROUND_COLOR, BACKGROUND_COLOR);
+
+    // enable attributes with color pair 1
     attron(COLOR_PAIR(1));
 
+    // return true to indicate successful initialization
     return true;
 }
 
+/*
+ * Display map on screen; see .h for more details. 
+ */
 void 
 display_map(char* map) 
 {
+    // starting cursor location
     int x = 0;
-    int y = 1;
+    int y = 1; // leaves top row for banner
 
+    // iterates over map
     for (int i = 0; i < strlen(map); i++) {
+        // gets current character
         char c = map[i];
 
-        if (x >= display.ncols) {
+        // if end of row reached, return
+        if (x >= client.ncolsBoard) {
             x = 0;
             y++;
         }
 
-        if (y >= display.nrows + 1) {
+        // if end of available board space reached, end
+        if (y >= client.nrowsBoard + 1) {
             break;
         }
 
+        // print character
         mvaddch(y, x, c);
+
+        // advance
         x++;
     }
 
+    // update display with new changes
     refresh();
 }
 
@@ -88,7 +113,7 @@ display_player_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets
     move(0, 0);
     clrtoeol();
     
-    char banner[display.ncolsScreen];
+    char banner[client.ncolsScreen];
     snprintf(banner, sizeof(banner), "Player %c has %d nuggets (%d nuggets unclaimed).", playerSymbol, playerNuggets, unclaimedNuggets);
     mvprintw(0, 0, "%s", banner);
     
@@ -139,7 +164,7 @@ remove_indicator()
 {
     moveToNormalBannerEnd();
     
-    for (int i = 0; i <= display.ncolsScreen; i++) {
+    for (int i = 0; i <= client.ncolsScreen; i++) {
         delch();
     }
     
@@ -178,10 +203,8 @@ setupScreenSize(int nrows, int ncols)
         ncolsScreen = w.ws_col;
     }
 
-    display.nrowsScreen = nrowsScreen;
-    display.ncolsScreen = ncolsScreen;
-    display.nrows = nrows;
-    display.ncols = ncols;
+    client.nrowsScreen = nrowsScreen;
+    client.ncolsScreen = ncolsScreen;
 }
 
 static void 
