@@ -2,6 +2,7 @@
 #define CLIENT_DATA_H
 
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef enum {
     CLIENT_PRE_INIT,
@@ -31,6 +32,6 @@ extern const int BACKGROUND_COLOR;
 extern const int FOREGROUND_COLOR;
 
 extern const char* PLAYER_KEYSTROKES;
-extern const char* SPECTATOR_KEYSTROKES; 
+extern const char* SPECTATOR_KEYSTROKES;
 
 #endif

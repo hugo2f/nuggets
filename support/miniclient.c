@@ -33,7 +33,7 @@ main(const int argc, char* argv[])
   // check arguments
   const char* program = argv[0];
   if (argc != 3) {
-    fprintf(stderr, "usage: %s hostname port\n", program);
+    fprintf(LOG_FILE, "usage: %s hostname port\n", program);
     return 3; // bad commandline
   }
   
@@ -42,7 +42,7 @@ main(const int argc, char* argv[])
   const char* serverPort = argv[2];
   addr_t server; // address of the server
   if (!message_setAddr(serverHost, serverPort, &server)) {
-    fprintf(stderr, "can't form address from %s %s\n", serverHost, serverPort);
+    fprintf(LOG_FILE, "can't form address from %s %s\n", serverHost, serverPort);
     return 4; // bad hostname/port
   }
 
@@ -68,11 +68,11 @@ handleInput(void* arg)
   // Defensive checks ensure it is not NULL pointer or non-address value.
   addr_t* serverp = arg;
   if (serverp == NULL) {
-    fprintf(stderr, "handleInput called with arg=NULL");
+    fprintf(LOG_FILE, "handleInput called with arg=NULL");
     return true;
   }
   if (!message_isAddr(*serverp)) {
-    fprintf(stderr, "handleInput called without a correspondent.");
+    fprintf(LOG_FILE, "handleInput called without a correspondent.");
     return true;
   }
   

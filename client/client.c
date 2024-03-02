@@ -16,6 +16,7 @@
 #include "graphics.h"
 #include "senders.h"
 #include "handlers.h"
+#include "validators.h"
 #include "clientdata.h"
 
 // function prototypes
@@ -39,30 +40,40 @@ const char* SPECTATOR_KEYSTROKES = "qQ"; // all valid keystrokes as spectator
 
 int 
 main(int argc, char* argv[]) 
-{
+{    
     addr_t server;
-    parseArgs(argc, argv, &server);
+    parseArgs(argc, argv, &server); // sets up server and sets player name
 
+    // uses message module to start a communicaation loop with the server
     bool messageLoopExitStatus = message_loop(&server, 0, NULL, respondToInput, handleMessage);
 
+    // shut down message module
     message_done();
+
+    // return error code corresponding to message loop exit status
     return messageLoopExitStatus ? EXIT_SUCCESS : 1;
 }
 
+/*
+ * Use IP adress and port to attempt server setup and set player name. 
+ */
 void 
 parseArgs(int argc, char* argv[], addr_t* serverp) 
-{
+{    
+    // verifies correct number of arguments 
     const char* program = argv[0];
     if (argc != 3 && argc != 4) {
         fprintf(stderr, "Usage: %s hostname port [player name]\n", program);
         exit(2);
     }
 
-    if (message_init(NULL) == 0) {
+    // attempts initialize message module, errors and exits if it cannot
+    if (message_init(stderr) == 0) {
         fprintf(stderr, "Could not initialize message module\n");
         exit(3);
     }
 
+    // attempts to construct server adress, errors and exits if it cannot
     const char* serverHost = argv[1];
     const char* serverPort = argv[2];
     if (!message_setAddr(serverHost, serverPort, serverp)) {
@@ -70,60 +81,82 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
         exit(4);
     }
 
+    // verifies server adress is valid, errors and exits if not
     if (serverp == NULL || !message_isAddr(*serverp)) {
         fprintf(stderr, "Invalid server address\n");
         exit(5);
     }
 
+    // if there is a fourth argument, use it to set player name
     if (argc == 4) {
         setPlayerName(argv[3]);
     }
 
+    // send start message to kick off communication with the server 
     send_start(serverp);
 }
 
+/*
+ * Responds to user input (keystrokes)
+ */
 static bool 
 respondToInput(void* server) 
 {    
+    // only respond to user input when a game is in session
     if (client.state != CLIENT_PLAY) {
         return false;
     }
     
+    // ensure server adress is valid (this should very rarely be an issue, given that we check this in 
+    // parseArgs as well)
     addr_t* serverp = server;
     if (serverp == NULL || !message_isAddr(*serverp)) {
         fprintf(stderr, "Invalid server address\n");
         return true;
     }
 
-    const char* validInputs = (client.playerName == NULL) ? SPECTATOR_KEYSTROKES : PLAYER_KEYSTROKES;
+    // define valid inputs depending on cllient mode (whether it is a Spectator or Player)
+    const char* functionalInputs = (client.playerName == NULL) ? SPECTATOR_KEYSTROKES : PLAYER_KEYSTROKES;
 
+    // get keystroke
     int input = get_character();
+
+    // validate keystroke as not EOF
+    if (!validate_stdin_character(input)) {
+        send_key(serverp, 'q');
+        return false; // continue message loop (we stop when we receive QUIT, not by our own volition)
+    }
     
-    if (strchr(validInputs, input) != NULL) {
+    // if keystroke does something, send it to server, else indicate that it is invalid
+    if (strchr(functionalInputs, input) != NULL) {
         send_key(serverp, input);
-        remove_indicator();
+        remove_indicator(); // removes any indicator present on banner line
     } else if (client.playerName != NULL) {
         indicate_invalid_key(input);
     }
 
-    return false;
+    return false; // continue message loop 
 }
 
+/*
+ * Responds to server messages
+ */
 static bool 
 handleMessage(void* arg, const addr_t from, const char* message) 
 {
+    // check if message is NULL, if so, error and continue
     if (message == NULL) {
         fprintf(stderr, "Obtained NULL message");
-        send_receipt((addr_t *)&from);
-        return false;
+        send_receipt((addr_t *)&from); // sends receipt message (only to miniserver - see function definition)
+        return false; // continue message loop 
     }
-
+    
     char messageHeader[25];
     char remainder[100];
     if (sscanf(message, "%24s %99[^\n]", messageHeader, remainder) != 2) {
         fprintf(stderr, "Received message with invalid format\n");
         send_receipt((addr_t *)&from);
-        return false;
+        return false; // continue message loop 
     }
 
     if (strcmp(messageHeader, "OK") == 0) {
@@ -140,13 +173,21 @@ handleMessage(void* arg, const addr_t from, const char* message)
         handle_spectator_gold(remainder);
     } else if (strcmp(messageHeader, "DISPLAY") == 0) {
         int mapsize = getMapSize();
-        
-        char map[mapsize];
-        if (sscanf(message, "%*s %[^\n]", map) != 1) {
-            fprintf(stderr, "Failed to retrieve map from DISPLAY message\n");
-            send_receipt((addr_t *)&from);
+
+        char format[mapsize];
+        if (snprintf(format, mapsize, "DISPLAY%%%d[^\n]", mapsize - 1) < 0) {
+            fprintf(stderr, "Failed to create format string\n");
             return false;
         }
+        
+        char map[mapsize];
+        if (sscanf(message, format, map) != 1) {
+            fprintf(stderr, "Failed to retrieve map from DISPLAY message\n");
+            send_receipt((addr_t *)&from);
+            return false; // continue message loop 
+        }
+
+        printf("HERE 3\n"); fflush(stdout);
 
         handle_display(map);  
     } else {
@@ -154,7 +195,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
     }
     
     send_receipt((addr_t *)&from);
-    return false;
+    return false; // continue message loop 
 }
 
 static void

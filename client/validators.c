@@ -31,3 +31,12 @@ validate_player_symbol(const char symbol)
 {
     return symbol >= 'A' && symbol <= 'Z';
 }
+
+/*
+ * Ensure input character is not stdin end of file 
+ */
+bool
+validate_stdin_character(const char stdinCharacter)
+{
+    return stdinCharacter != EOF;
+}

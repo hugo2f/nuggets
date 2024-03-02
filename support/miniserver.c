@@ -38,7 +38,7 @@ main(const int argc, char* argv[])
   // check arguments (there should be none)
   const char* program = argv[0];
   if (argc != 1) {
-    fprintf(stderr, "usage: %s\n", program);
+    fprintf(LOG_FILE, "usage: %s\n", program);
     return 3; // bad commandline
   }
   
