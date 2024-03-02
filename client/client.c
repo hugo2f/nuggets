@@ -151,6 +151,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         return false; // continue message loop 
     }
     
+    // extract the message header (the first word) and everything else
     char messageHeader[25];
     char remainder[100];
     if (sscanf(message, "%24s %99[^\n]", messageHeader, remainder) != 2) {
@@ -159,6 +160,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         return false; // continue message loop 
     }
 
+    // depending on the message header, call the corresponding function and pass in remainder
     if (strcmp(messageHeader, "OK") == 0) {
         handle_okay(remainder);
     } else if (strcmp(messageHeader, "GRID") == 0) {
@@ -172,14 +174,16 @@ handleMessage(void* arg, const addr_t from, const char* message)
     } else if (strcmp(messageHeader, "SPECTATOR_GOLD") == 0) {
         handle_spectator_gold(remainder);
     } else if (strcmp(messageHeader, "DISPLAY") == 0) {
-        int mapsize = getMapSize();
+        int mapsize = getMapSize(); // get map size
 
+        // get format string that limits command length (to avoid stack smashing), error and continue upon failure
         char format[mapsize];
         if (snprintf(format, mapsize, "DISPLAY%%%d[^\n]", mapsize - 1) < 0) {
-            fprintf(stderr, "Failed to create format string\n");
-            return false;
+            fprintf(stderr, "Failed to create map format string\n");
+            return false; // continue message loop 
         }
         
+        // extract map from message, error and continue upon failure 
         char map[mapsize];
         if (sscanf(message, format, map) != 1) {
             fprintf(stderr, "Failed to retrieve map from DISPLAY message\n");
@@ -187,32 +191,40 @@ handleMessage(void* arg, const addr_t from, const char* message)
             return false; // continue message loop 
         }
 
-        printf("HERE 3\n"); fflush(stdout);
-
         handle_display(map);  
     } else {
-        fprintf(stderr, "%s is an invalid message header\n", messageHeader);
+        fprintf(stderr, "%s is an invalid message header\n", messageHeader); // bad message header
     }
     
     send_receipt((addr_t *)&from);
     return false; // continue message loop 
 }
 
+/*
+ * Sets playerName in clientData structure ensuring corrent length
+ */
 static void
 setPlayerName(char* name) 
 {
+    // ensures we are not setting a player name we already set 
     if (client.playerName != NULL) {
         fprintf(stderr, "You cannot reset player name");
         return;
     }
 
+    // truncates player name to correct length
     if (strlen(name) > MAXIMUM_NAME_LENGTH) {
         name[MAXIMUM_NAME_LENGTH] = '\0';
     }
 
+    // sets player name
     client.playerName = name;
 }
 
+/*
+ * Calculates the map size (area), returns maximum possible map size (for memory safety), if calculation
+ * obtains zero
+ */
 static int
 getMapSize() 
 {
