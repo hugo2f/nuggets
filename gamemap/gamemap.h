@@ -137,7 +137,8 @@ void deleteGrid(char** grid, int numRows);
 int** getVisibleRegion(GameMap_t* map, int row, int col);
 
 /*
- * Return an array of room cell ('.') coordinates
+ * Return an array of room cell ('.') coordinates in the gameGrid.
+ * Does not include player or gold cells.
  *
  * Inputs:
  *   map: GameMap_t*
