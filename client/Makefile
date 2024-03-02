@@ -24,4 +24,4 @@ test: client
 	bash -v ./testing.sh
 
 clean:
-	rm -f core client *.o
+	rm -f core client graphics validators senders handlers *.o

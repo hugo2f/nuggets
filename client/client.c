@@ -26,14 +26,14 @@ static void setPlayerName(char* name);
 static int getMapSize(); 
 
 // project-wide global client struct - type defined in clientdata.h 
-ClientData client = {NULL, '\0', 0, 0, CLIENT_PRE_INIT};
+ClientData client = {NULL, '\0', 0, 0, 0, 0, CLIENT_PRE_INIT};
 
-// project-wide global constants
+// global constants
 const int MAXIMUM_NAME_LENGTH = 50;
 const int MAXIMUM_GOLD = 1000;
 const int MAXIMUM_MAP_SIZE = 2500; // as area
-
-// file-scoped global constants
+const int FOREGROUND_COLOR = 7;
+const int BACKGROUND_COLOR = 0;
 const char* PLAYER_KEYSTROKES = "qQhHlLjJkKyYuUnNbB"; // all valid keystrokes as player
 const char* SPECTATOR_KEYSTROKES = "qQ"; // all valid keystrokes as spectator
 
@@ -175,7 +175,7 @@ setPlayerName(char* name)
 static int
 getMapSize() 
 {
-    int mapsize = client.ncols * client.nrows;
+    int mapsize = client.ncolsBoard * client.nrowsBoard;
     mapsize = (mapsize == 0) ? MAXIMUM_MAP_SIZE : mapsize;
     return mapsize;
 }
