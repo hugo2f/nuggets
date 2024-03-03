@@ -23,7 +23,7 @@
 static void parseArgs(int argc, char* argv[], addr_t* serverp);
 static bool respondToInput(void* server);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
-static void setPlayerName(char* name);
+static void setPlayerName(const int argc, char* argv[]);
 static int getMapSize(); 
 
 // project-wide global client struct - type defined in clientdata.h 
@@ -62,7 +62,7 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
 {    
     // verifies correct number of arguments 
     const char* program = argv[0];
-    if (argc != 3 && argc != 4) {
+    if (argc < 3) {
         fprintf(stderr, "Usage: %s hostname port [player name]\n", program);
         exit(2);
     }
@@ -88,8 +88,8 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
     }
 
     // if there is a fourth argument, use it to set player name
-    if (argc == 4) {
-        setPlayerName(argv[3]);
+    if (argc > 3) {
+        setPlayerName(argc, argv);
     }
 
     // send start message to kick off communication with the server 
@@ -204,7 +204,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
  * Sets playerName in clientData structure ensuring corrent length
  */
 static void
-setPlayerName(char* name) 
+setPlayerName(const int argc, char* argv[]) 
 {
     // ensures we are not setting a player name we already set 
     if (client.playerName != NULL) {
@@ -212,9 +212,30 @@ setPlayerName(char* name)
         return;
     }
 
-    // truncates player name to correct length
-    if (strlen(name) > MAXIMUM_NAME_LENGTH) {
-        name[MAXIMUM_NAME_LENGTH] = '\0';
+    // create name character array
+    char name[MAXIMUM_NAME_LENGTH];
+    
+    // ensure that there is nothing in memory name included in array
+    name[0] = '\0';
+
+    int currentNameSize = 0; // will keep track of how full the buffer is
+    
+    // iterate through each argument
+    for (int i = 3; i < argc; i++) {
+        char* argument = argv[i]; // get argument
+        int argumentLength = strlen(argument); // get argument size
+
+        // if adding the argument and a space will not exceed the buffer, add it and a space
+        if (currentNameSize + argumentLength + 1 < MAXIMUM_NAME_LENGTH) {
+            strncat(name, argument, MAXIMUM_NAME_LENGTH - currentNameSize - 1);
+            strncat(name, " ", MAXIMUM_NAME_LENGTH - currentNameSize - 1);
+            currentNameSize = currentNameSize + argumentLength + 1;
+        } 
+        // otherwise, add however much is possible and break
+        else {
+            strncat(name, argv[i], MAXIMUM_NAME_LENGTH - currentNameSize);
+            break;
+        }
     }
 
     // sets player name

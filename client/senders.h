@@ -27,6 +27,8 @@
 void send_receipt(addr_t* serverp); 
 
 /*
+ * Runs in CLIENT_PRE_INIT state.
+ * 
  * Sends "PLAY [playerName]" or "SPECTATE" according to client type and advances client state. 
  *
  * Requires serverp and returns void
@@ -34,6 +36,8 @@ void send_receipt(addr_t* serverp);
 void send_start(addr_t* serverp); 
 
 /*
+ * Runs in CLIENT_PLAY state.
+ *
  * Sends "KEY [keystroke]". 
  *
  * Requires serverp and returns void
