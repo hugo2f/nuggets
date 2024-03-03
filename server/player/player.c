@@ -11,6 +11,7 @@
 typedef struct player {
   char characterID;
   GameMap_t* gameMap; //store a pointer to the map object of the entire game
+  char* stealMessage;
   char** playerMap;
   int gold;
   char* name;
@@ -30,20 +31,22 @@ char** getPlayerMap(player_t* player);
 int getPlayerRow(player_t* player);
 int getPlayerCol(player_t* player);
 addr_t getPlayerAddress(player_t* player);
-bool getPlayerActive();
+bool getPlayerActive(player_t* player);
+char* getStealMessage(player_t*player);
 void setPlayerInactive(player_t* player);
+void updateGoldDisplay(player_t* player, int pileAmount, int goldRemaining);
 void addGold(player_t* player, int amount);
-void stealGold(player_t* player1, player_t* player2);
+void stealGold(player_t* player1, player_t* player2, int goldRemaining);
 void updatePlayerPosition(player_t* player);
 char getCharacterID(player_t* player);
-int moveDownRight(player_t* player, player_t** players);
-int moveDownLeft(player_t* player, player_t** players);
-int moveUpRight(player_t* player, player_t** players);
-int moveDownRight(player_t* player, player_t** players);
-int moveUp(player_t* player, player_t** players);
-int moveDown(player_t* player, player_t** players);
-int moveLeft(player_t* player, player_t** players);
-int moveRight(player_t* player, player_t** players);
+int moveDownRight(player_t* player, player_t** players, int goldRemaining);
+int moveDownLeft(player_t* player, player_t** players, int goldRemaining);
+int moveUpRight(player_t* player, player_t** players, int goldRemaining);
+int moveDownRight(player_t* player, player_t** players, int goldRemaining);
+int moveUp(player_t* player, player_t** players, int goldRemaining);
+int moveDown(player_t* player, player_t** players, int goldRemaining);
+int moveLeft(player_t* player, player_t** players, int goldRemaining);
+int moveRight(player_t* player, player_t** players, int goldRemaining);
 
 /*
  * Initializes a player and their data
@@ -63,6 +66,7 @@ player_t* player_new(char ID, GameMap_t* map, char** grid, int gold, char* name,
   player->col = col;
   player->playerAddress = address;
   player->active = true;
+  player->stealMessage = NULL;
   return player;
 }
 
@@ -159,6 +163,11 @@ getPlayerActive(player_t* player)
   return player->active;  
 }
 
+char*
+getStealMessage(player_t* player) {
+  return player->stealMessage;
+}
+
 /*
  * Add gold to a player's amount
  */
@@ -168,7 +177,23 @@ addGold(player_t* player, int amount)
   player->gold += amount;
 }
 
-void stealGold(player_t* player1, player_t* player2)
+/*
+ * Update the player's banner to reflect changes in gold 
+ */
+void
+updateGoldDisplay(player_t* player, int pileAmount, int goldRemaining)
+{
+  char* goldMessage = malloc(50 * sizeof(char)); 
+  sprintf(goldMessage, "GOLD %d %d %d", pileAmount, player->gold, goldRemaining);
+  message_send(player->playerAddress, goldMessage);
+  free(goldMessage);
+}
+
+/*
+ * Steal gold from another player when swapping places with them
+ * player1 is the player stealing the gold 
+ */
+void stealGold(player_t* player1, player_t* player2, int goldRemaining)
 {
   int value = player2->gold;
   int stolen = 0;
@@ -186,6 +211,14 @@ void stealGold(player_t* player1, player_t* player2)
   }
   player1->gold = player1->gold + stolen;
   player2->gold = player2->gold - stolen;
+
+  //set steal messages
+  char* stealMessage = malloc(50 * sizeof(char));
+  sprintf(stealMessage, "STOLEN %c %c %d %d %d", player2->characterID, player1->characterID, stolen, player1->gold, goldRemaining);
+  player1->stealMessage = stealMessage;
+  sprintf(stealMessage, "STOLEN %c %c %d %d %d", player2->characterID, player1->characterID, stolen, player2->gold, goldRemaining);
+  //send player2's message, player 1 message is sent in server
+  message_send(player2->playerAddress, stealMessage);
 }
 
 /*
@@ -195,7 +228,6 @@ void
 updatePlayerPosition(player_t* player) 
 {
   //set the visible region
-
   if (player == NULL) {
     return;
   }
@@ -206,7 +238,8 @@ updatePlayerPosition(player_t* player)
 
   int playerRow = player->row;
   int playerCol = player->col;
-
+  
+  //replace all seen parts of the map with terrain 
   for (int row = 0; row < numRows; row++) {
     for (int col = 0; col < numCols; col++) {
       if (grid[row][col] != ' ') {
@@ -215,6 +248,7 @@ updatePlayerPosition(player_t* player)
     }
   }
 
+  //update their visible region (their gold and player vision)
   int** visibleRegion = getVisibleRegion(player->gameMap, playerRow, playerCol);
   if (visibleRegion == NULL) {
     printf("can't move there\n");
@@ -232,11 +266,17 @@ updatePlayerPosition(player_t* player)
   delete2DIntArr(visibleRegion, size+1);
 }
       
+/*
+ * Return's a player's character id
+ */
 char getCharacterID(player_t* player)
 {
   return player->characterID;
 }
 
+/*
+ * Sets a player's active status to inactive 
+ */
 void setPlayerInactive(player_t* player)
 {
   player->active = false;
@@ -245,10 +285,11 @@ void setPlayerInactive(player_t* player)
 /*
  * Moves a player down and right
  * Returns 0 if regular movement, 1 if the player stepped on gold,
- * 2 if we hit a wall (this is for move as far as you can movement)
+ * 2 if a player stole gold, 3 if we hit a wall 
+ * (this is for move as far as you can movement)
  */
 
-int moveDownRight(player_t* player, player_t** players)
+int moveDownRight(player_t* player, player_t** players, int goldRemaining)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row+1, player->col+1))) {
@@ -270,7 +311,8 @@ int moveDownRight(player_t* player, player_t** players)
         player2->col = tempCol;
         setCellType(player->gameMap, player->characterID, player->row, (player->col));
         setCellType(player->gameMap, player2->characterID, player2->row, (player2->col));
-        stealGold(player, player2);
+        stealGold(player, player2, goldRemaining);
+        flag = 2;
       }
       else if(getCellType(player->gameMap, player->row +1, player-> col+1) == '*'){
         setCellType(player->gameMap, player->characterID, player->row+1, player->col +1);
@@ -283,16 +325,17 @@ int moveDownRight(player_t* player, player_t** players)
     updatePlayerPosition(player);
     return flag;
   }
-  return 2;
+  return 3;
 }
 
 /*
  * Moves a player down and left
  * Returns 0 if regular movement, 1 if the player stepped on gold,
- * 2 if we hit a wall (this is for move as far as you can movement)
+ * 2 if a player stole gold, 3 if we hit a wall 
+ * (this is for move as far as you can movement)
  */
 
-int moveDownLeft(player_t* player, player_t** players)
+int moveDownLeft(player_t* player, player_t** players, int goldRemaining)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row+1, player->col-1))){
@@ -314,7 +357,8 @@ int moveDownLeft(player_t* player, player_t** players)
         player2->col = tempCol;
         setCellType(player->gameMap, player->characterID, player->row  , (player->col));
         setCellType(player->gameMap, player2->characterID, player2->row  , (player2->col));
-        stealGold(player, player2);
+        stealGold(player, player2, goldRemaining);
+        flag = 2;
       }
       else if(getCellType(player->gameMap, player->row +1, player-> col-1) == '*'){
         setCellType(player->gameMap, player->characterID, player->row+1, player->col -1);
@@ -327,16 +371,17 @@ int moveDownLeft(player_t* player, player_t** players)
     updatePlayerPosition(player);
     return flag;
   }
-  return 2;
+  return 3;
 }
 
 /*
  * Moves a player up and right
  * Returns 0 if regular movement, 1 if the player stepped on gold,
- * 2 if we hit a wall (this is for move as far as you can movement)
+ * 2 if a player stole gold, 3 if we hit a wall 
+ * (this is for move as far as you can movement)
  */
 
-int moveUpRight(player_t* player, player_t** players)
+int moveUpRight(player_t* player, player_t** players, int goldRemaining)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row-1, player->col+1))){
@@ -358,7 +403,8 @@ int moveUpRight(player_t* player, player_t** players)
         player2->col = tempCol;
         setCellType(player->gameMap, player->characterID, player->row , (player->col));
         setCellType(player->gameMap, player2->characterID, player2->row , (player2->col));
-        stealGold(player, player2);
+        stealGold(player, player2, goldRemaining);
+        flag = 2;
       }
       else if(getCellType(player->gameMap, player->row -1, player-> col+1) == '*'){
         setCellType(player->gameMap, player->characterID, player->row-1, player->col +1);
@@ -371,16 +417,17 @@ int moveUpRight(player_t* player, player_t** players)
     updatePlayerPosition(player);
     return flag;
   }
-  return 2;
+  return 3;
 } 
 
 /*
  * Moves a player up and left
  * Returns 0 if regular movement, 1 if the player stepped on gold,
- * 2 if we hit a wall (this is for move as far as you can movement)
+ * 2 if a player stole gold, 3 if we hit a wall 
+ * (this is for move as far as you can movement)
  */
 
-int moveUpLeft(player_t* player, player_t** players)
+int moveUpLeft(player_t* player, player_t** players, int goldRemaining)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row-1, player->col-1))){
@@ -402,7 +449,8 @@ int moveUpLeft(player_t* player, player_t** players)
         player2->col = tempCol;
         setCellType(player->gameMap, player->characterID, player->row, (player->col));
         setCellType(player->gameMap, player2->characterID, player2->row , (player2->col));
-        stealGold(player, player2);
+        stealGold(player, player2, goldRemaining);
+        flag = 2;
       }
       else if(getCellType(player->gameMap, player->row -1, player-> col-1) == '*'){
         setCellType(player->gameMap, player->characterID, player->row-1, player->col -1);
@@ -415,16 +463,17 @@ int moveUpLeft(player_t* player, player_t** players)
     updatePlayerPosition(player);
     return flag;
   }
-  return 2;
+  return 3;
 } 
 
 /*
  * Moves a player up
  * Returns 0 if regular movement, 1 if the player stepped on gold,
- * 2 if we hit a wall (this is for move as far as you can movement)
+ * 2 if a player stole gold, 3 if we hit a wall 
+ * (this is for move as far as you can movement)
  */
 
-int moveUp(player_t* player, player_t** players)
+int moveUp(player_t* player, player_t** players, int goldRemaining)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row-1, player->col))){
@@ -442,7 +491,8 @@ int moveUp(player_t* player, player_t** players)
         player2->row = tempRow;
         setCellType(player->gameMap, player->characterID, player->row , (player->col));
         setCellType(player->gameMap, player2->characterID, player2->row , (player2->col));
-        stealGold(player, player2);
+        stealGold(player, player2, goldRemaining);
+        flag = 2;
       }
       else if(getCellType(player->gameMap, player->row -1, player-> col) == '*'){
         setCellType(player->gameMap, player->characterID, player->row-1, player->col);
@@ -454,16 +504,17 @@ int moveUp(player_t* player, player_t** players)
     updatePlayerPosition(player);
     return flag;
   }
-  return 2;
+  return 3;
 }
 
 /*
  * Moves a player down
  * Returns 0 if regular movement, 1 if the player stepped on gold,
- * 2 if we hit a wall (this is for move as far as you can movement)
+ * 2 if a player stole gold, 3 if we hit a wall 
+ * (this is for move as far as you can movement)
  */
 
-int moveDown(player_t* player, player_t** players)
+int moveDown(player_t* player, player_t** players, int goldRemaining)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row+1, player->col))){
@@ -481,7 +532,8 @@ int moveDown(player_t* player, player_t** players)
         player2->row = tempRow;
         setCellType(player->gameMap, player->characterID, player->row , (player->col));
         setCellType(player->gameMap, player2->characterID, player2->row , (player2->col));
-        stealGold(player, player2);
+        stealGold(player, player2, goldRemaining);
+        flag = 2;
       }
       else if(getCellType(player->gameMap, player->row +1, player-> col) == '*'){
         setCellType(player->gameMap, player->characterID, player->row+1, player->col);
@@ -493,16 +545,17 @@ int moveDown(player_t* player, player_t** players)
     updatePlayerPosition(player);
     return flag;
   }
-  return 2;
+  return 3;
 }
 
 /*
  * Moves a player left
  * Returns 0 if regular movement, 1 if the player stepped on gold,
- * 2 if we hit a wall (this is for move as far as you can movement)
+ * 2 if a player stole gold, 3 if we hit a wall 
+ * (this is for move as far as you can movement)
  */
 
-int moveLeft(player_t* player, player_t** players)
+int moveLeft(player_t* player, player_t** players, int goldRemaining)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row, player->col-1))) {
@@ -520,7 +573,8 @@ int moveLeft(player_t* player, player_t** players)
         player2->col = tempRow;
         setCellType(player->gameMap, player->characterID, player->row , (player->col));
         setCellType(player->gameMap, player2->characterID, player2->row , (player2->col));
-        stealGold(player, player2);
+        stealGold(player, player2, goldRemaining);
+        flag = 2;
       }
       else if(getCellType(player->gameMap, player->row, player->col-1) == '*'){
         setCellType(player->gameMap, player->characterID, player->row, player->col-1);
@@ -532,16 +586,17 @@ int moveLeft(player_t* player, player_t** players)
     updatePlayerPosition(player);
     return flag;
   }
-  return 2;
+  return 3;
 }
 
 /*
  * Moves a player right
  * Returns 0 if regular movement, 1 if the player stepped on gold,
- * 2 if we hit a wall (this is for move as far as you can movement)
+ * 2 if a player stole gold, 3 if we hit a wall 
+ * (this is for move as far as you can movement)
  */
 
-int moveRight(player_t* player, player_t* players[])
+int moveRight(player_t* player, player_t** players, int goldRemaining)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row, player->col+1))) {
@@ -559,7 +614,8 @@ int moveRight(player_t* player, player_t* players[])
         player2->col = tempRow;
         setCellType(player->gameMap, player->characterID, player->row , (player->col));
         setCellType(player->gameMap, player2->characterID, player2->row , (player2->col));
-        stealGold(player, player2);
+        stealGold(player, player2, goldRemaining);
+        flag = 2;
       }
       else if(getCellType(player->gameMap, player->row, player-> col+1) == '*'){
         setCellType(player->gameMap, player->characterID, player->row, player->col+1);
@@ -571,5 +627,5 @@ int moveRight(player_t* player, player_t* players[])
     updatePlayerPosition(player);
     return flag;
   }
-  return 2;
+  return 3;
 }

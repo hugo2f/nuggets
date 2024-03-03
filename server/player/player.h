@@ -59,8 +59,16 @@ bool getPlayerActive(player_t* player);
 /*
  
  */
+char* getStealMessage(player_t* player);
+/*
+ 
+ */
 void setPlayerInactive(player_t* player);
 
+/*
+ 
+ */
+void updateGoldDisplay(player_t* player, int pileAmount, int goldRemaining);
 /*
  
  */
@@ -68,7 +76,7 @@ void addGold(player_t* player, int amount);
 /*
  
  */
-void stealGold(player_t* player1, player_t* player2);
+void stealGold(player_t* player1, player_t* player2, int goldRemaining);
 
 /*
  *
@@ -82,35 +90,35 @@ char getCharacterID(player_t* player);
  * 
  */
 
-int moveDownRight(player_t* player, player_t** players);
+int moveDownRight(player_t* player, player_t** players, int goldRemaining);
 /*
  * 
  */
-int moveDownLeft(player_t* player, player_t** players);
+int moveDownLeft(player_t* player, player_t** players, int goldRemaining);
 /*
  * 
  */
-int moveUpRight(player_t* player, player_t** players);
+int moveUpRight(player_t* player, player_t** players, int goldRemaining);
 /*
  * 
  */
-int moveUpLeft(player_t* player, player_t** players);
+int moveUpLeft(player_t* player, player_t** players, int goldRemaining);
 /*
  * 
  */
-int moveUp(player_t* player, player_t** players);
+int moveUp(player_t* player, player_t** players, int goldRemaining);
 /*
  * 
  */
-int moveDown(player_t* player, player_t** players);
+int moveDown(player_t* player, player_t** players, int goldRemaining);
 /*
  * 
  */
-int moveLeft(player_t* player, player_t** players);
+int moveLeft(player_t* player, player_t** players, int goldRemaining);
 /*
  * 
  */
-int moveRight(player_t* player, player_t** players);
+int moveRight(player_t* player, player_t** players, int goldRemaining);
 
 
 #endif // __GameMap_H__
