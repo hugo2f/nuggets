@@ -13,3 +13,9 @@ When all gold nuggets are collected, the game ends and a summary is printed.
 See the [support library](support/README.md) for some useful modules.
 
 See the [maps](maps/README.md) for some draft maps.
+
+## Notes
+
+For extra credit, we implemented:
+1. Gold stealing: when player A walks into player B, A will steal some gold from B.
+2. Sight range: players can only see cells that are up to `sightRadius = 5` cells away in either direction.
