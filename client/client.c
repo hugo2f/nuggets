@@ -220,7 +220,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         }
         #endif
     } else if (strcmp(messageHeader, "GOLD_REMAINING") == 0) {
-        handle_starting_gold_remaining(remainder);
+        handle_gold_remaining(remainder);
     } else if (strcmp(messageHeader, "STOLEN") == 0) {
         handle_stolen(remainder);
     } else {

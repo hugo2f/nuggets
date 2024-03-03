@@ -103,7 +103,7 @@ handle_grid(char* coordinates)
  * Runs upon receiving message from server with the GOLD_REMAINING header; see .h for more details.
  */
 void
-handle_starting_gold_remaining(char* startingGoldRemainingString)
+handle_gold_remaining(char* startingGoldRemainingString)
 {
     int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
     
