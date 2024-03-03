@@ -1,0 +1,22 @@
+GOLD
+GOLD 1 2 3
+OK
+OK adasdasdasdasdasdasd
+OK adasdasdasdasdasdasd
+GRID
+ERROR
+ERROR error explanation
+GRID adasdasdasdasdasdasd
+GRID 12 12
+GOLD 1 2 3
+OK Adasdasdasdasdasdasd
+DISPLAY adasdasdasdasdasdasd
+DISPLAY
+GOLD_REMAINING 100000000000000000000000
+DISPLAY adasdasdasdasdasdasd
+OK L
+GOLD_REMAINING 100
+DISPLAY asdadsadsadsadsasdasd
+GOLD 1 2 3
+ERROR error explanation
+GOLD 100000000000000000000000 100000000000000000000000 100000000000000000000000

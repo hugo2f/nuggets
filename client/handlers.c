@@ -252,7 +252,7 @@ void
 handle_quit(char* explanation) 
 {
     end_curses();
-    printf("QUIT %s\n", explanation);
+    printf("%s\n", explanation);
     fflush(stdout);
     exit(EXIT_SUCCESS);
 }

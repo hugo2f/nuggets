@@ -19,9 +19,10 @@ LIBS = -lm -lcurses
 
 # flag for testing on the miniserver (comment for final build)
 MINISERVER_TEST=-DMINISERVER_TEST
+UNIT_TEST=-DUNIT_TEST
 
 # compilation flags (used by default)
-CFLAGS = -Wall -pedantic -std=c11 -ggdb $(LOGGING) $(MINISERVER_TEST) -I$(S) $(FLAGS)
+CFLAGS = -Wall -pedantic -std=c11 -ggdb $(MINISERVER_TEST) $(UNIT_TEST) -I$(S) $(FLAGS)
 
 # compiler is gcc
 CC = gcc
@@ -46,4 +47,4 @@ test: client
 
 # cleans core dumps, object files, executables
 clean:
-	rm -f core client graphics validators senders handlers *.o
+	rm -f core client graphics vmalidators senders handlers *.o

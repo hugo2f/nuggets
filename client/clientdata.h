@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef CLIENT_DATA_H
-#define CLIENT_DATA_H
+#ifndef _CLIENT_DATA_H_
+#define _CLIENT_DATA_H_
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -52,4 +52,4 @@ extern const int FOREGROUND_COLOR; // color of display foreground
 extern const char* PLAYER_KEYSTROKES; // contains all valid keysrokes player can press
 extern const char* SPECTATOR_KEYSTROKES; // contains all valid keysrokes spectator can press
 
-#endif
+#endif /* _CLIENT_DATA_H_ */

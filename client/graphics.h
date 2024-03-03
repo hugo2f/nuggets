@@ -104,4 +104,4 @@ char get_character();
  */
 void end_curses();
 
-#endif
+#endif /* _GRAPHICS_H_ */

@@ -44,5 +44,5 @@ void send_start(addr_t* serverp);
  */
 void send_key(addr_t* serverp, char key); 
 
-#endif
+#endif /* _SENDERS_H_ */
 

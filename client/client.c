@@ -1,7 +1,8 @@
 /*
  * Description: contains the main control flow for the client, defining the global data, receiving 
- * input from the user and messages from the server, and delegating the responses to various command 
- * handlers and message senders (organized as such in seperate modules). 
+ * input from the user and messages from the server, delegating the responses to various command 
+ * handlers and message senders (organized as such in seperate modules), as well as running tests if it 
+ * is in test mode. 
  * 
  * Author: Joseph Hirsh
  * Date: March 1st, 2024
@@ -25,6 +26,7 @@ static bool respondToInput(void* server);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 static void setPlayerName(const int argc, char* argv[]);
 static int getMapSize(); 
+void unitTest(const addr_t from);
 
 // project-wide global client struct; see .h for more details.
 ClientData client = {NULL, '\0', 0, 0, 0, 0, 0, PRE_INIT};
@@ -94,6 +96,8 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
 
     // send start message to kick off communication with the server 
     send_start(serverp);
+
+    unitTest(*serverp);
 }
 
 /*
@@ -202,7 +206,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         }
 
         handle_display(map);  
-    } else if (strcmp(messageHeader, "STARTING_GOLD_REMAINING") == 0) {
+    } else if (strcmp(messageHeader, "GOLD_REMAINING") == 0) {
         handle_starting_gold_remaining(remainder);
     } else {
         fprintf(stderr, "%s is an invalid message header\n", messageHeader); // bad message header
@@ -264,4 +268,44 @@ getMapSize()
     int mapsize = client.ncolsMap * client.nrowsMap;
     mapsize = (mapsize == 0) ? MAXIMUM_MAP_SIZE : mapsize;
     return mapsize;
+}
+
+/*
+ * Runs a series of commands to stress test the client's message receive functionality (its primary tasks)
+ */
+void
+unitTest(const addr_t from)
+{
+    #ifdef UNIT_TEST // if we are in test mode
+    fprintf(stderr, "Running test build"); // indicate that we are in test mode on log
+    printf("PERFORMING UNIT TESTS:\nNote: a '>' indicates error detected in client, not handler\n"); 
+
+    char command[500]; // adjust the size as needed according to testcommands.txt content
+
+    // open the file
+    FILE* testCommandsFile = fopen("testcommands.txt", "r");
+    
+    // ensure file opened successfully
+    if (testCommandsFile == NULL) {
+        fprintf(stderr, "Error opening testcommands.txt file, continuing to normal execution\n");
+        return;
+    }
+
+    // read each line in the file
+    while (fgets(command, sizeof(command), testCommandsFile)) {
+        printf("\nSERVER COMMAND\n%s\nCLIENT OUTPUT\n> ", command);
+        fflush(stdout);
+        handleMessage(NULL, from, command);
+        printf("\n");
+        fflush(stdout);
+    }
+
+    // close the file
+    fclose(testCommandsFile);
+
+    // indicate tests over
+    printf("TESTING COMPLETE, CONTINUING TO NORMAL EXECUTION\n");
+    #else
+    fprintf(stderr, "Running release build"); // indicate that we are in release mode on log
+    #endif
 }

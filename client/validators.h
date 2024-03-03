@@ -28,4 +28,4 @@ bool validate_player_symbol(const char symbol);
  */
 bool validate_stdin_character(const char stdinCharacter);
 
-#endif
+#endif /* _VALIDATORS_H_ */

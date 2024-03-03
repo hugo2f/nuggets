@@ -90,4 +90,4 @@ void handle_quit(char* explanation);
  */
 void handle_error(char* error); 
 
-#endif
+#endif /* _HANDLERS_H_ */
