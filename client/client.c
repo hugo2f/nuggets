@@ -28,9 +28,6 @@ static void setPlayerName(const int argc, char* argv[]);
 static int getMapSize(); 
 void unitTest(const addr_t from);
 
-// project-wide global client struct; see .h for more details.
-ClientData client = {NULL, '\0', 0, 0, 0, 0, 0, PRE_INIT};
-
 // global constants; see .h for more details.
 const int MAXIMUM_NAME_LENGTH = 50;
 const int MAXIMUM_GOLD = 1000;
@@ -39,6 +36,9 @@ const int FOREGROUND_COLOR = 7;
 const int BACKGROUND_COLOR = 0;
 const char* PLAYER_KEYSTROKES = "qQhHlLjJkKyYuUnNbB";
 const char* SPECTATOR_KEYSTROKES = "qQ";
+
+// project-wide global client struct; see .h for more details.
+ClientData client = {NULL, '\0', 0, 0, 0, 0, MAXIMUM_GOLD, PRE_INIT};
 
 int 
 main(int argc, char* argv[]) 
@@ -271,14 +271,16 @@ getMapSize()
 }
 
 /*
- * Runs a series of commands to stress test the client's message receive functionality (its primary tasks)
+ * Runs a series of commands to stress test the client's message receive functionality (its primary tasks).
+ * 
+ * Note that this is not a comprehensive test of the message receive, but it verifies that the cleint is 
+ * robust with respect to the most frequent ways in which it might receive malformed messages. 
  */
 void
 unitTest(const addr_t from)
 {
     #ifdef UNIT_TEST // if we are in test mode
     fprintf(stderr, "Running test build"); // indicate that we are in test mode on log
-    printf("PERFORMING UNIT TESTS:\nNote: a '>' indicates error detected in client, not handler\n"); 
 
     char command[500]; // adjust the size as needed according to testcommands.txt content
 
@@ -293,7 +295,7 @@ unitTest(const addr_t from)
 
     // read each line in the file
     while (fgets(command, sizeof(command), testCommandsFile)) {
-        printf("\nSERVER COMMAND\n%s\nCLIENT OUTPUT\n> ", command);
+        printf("\nSERVER COMMAND\n%s\nCLIENT OUTPUT\n", command);
         fflush(stdout);
         handleMessage(NULL, from, command);
         printf("\n");
