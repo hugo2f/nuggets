@@ -1,5 +1,32 @@
-Assumptions:
+# README
 
-I made an assumption that 3rd argument is the ONLY argument that contributes to setting the player name. Any command to execute client with more than 3 arguments errors and exits. It was unclear from the REQUIREMENTS.md whether or not EVERYTHING typed after the port number was supposed to be in the name. We asked our learning fellow, who said that only the fourth argument should be the name. We also think that this is the best design choice as it is simple and abides by the the unix standard. 
+## Client Assumptions and Development Notes 
 
-Beyond this, the only other assumption is that the server and the client share a mutually-understood communication protocol.  
+### Author: Joseph Hirsh
+
+### Date: March 2nd, 2024
+
+---
+
+## Assumptions:
+
+- The server and the client share a mutually-understood communication protocol.
+
+---
+
+## Usage of ChatGPT:
+
+I occasionally used ChatGPT for these purposes:
+
+1. Looking up C library function usage.
+2. Suggesting style improvements for already functional code.
+3. Explaining good practices around global variable usage.
+4. Assisting in writing the proper ncurses code, as I was not familiar with ncurses before this project.
+
+---
+
+## Peer Support:
+
+- I did not seek any peer support outside of my group during the development process.
+
+---
