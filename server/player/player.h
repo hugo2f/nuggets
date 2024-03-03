@@ -53,6 +53,17 @@ player_t* getPlayerByID(player_t** players, char ID);
 /*
  
  */
+
+bool getPlayerActive(player_t* player);
+
+/*
+ 
+ */
+void setPlayerInactive(player_t* player);
+
+/*
+ 
+ */
 void addGold(player_t* player, int amount);
 /*
  
@@ -70,14 +81,7 @@ char getCharacterID(player_t* player);
 /*
  * 
  */
-bool player_isActive(player_t* player);
-/*
- * 
- */
-void player_inActive(player_t* player);
-/*
- * 
- */
+
 int moveDownRight(player_t* player, player_t** players);
 /*
  * 

@@ -9,8 +9,8 @@
 
 static const int MaxPlayers = 27;      // maximum number of players
 static const int GoldTotal = 250;      // amount of gold in the game
-static const int GoldMinNumPiles = 10; // minimum number of gold piles
-static const int GoldMaxNumPiles = 30; // maximum number of gold piles
+static const int GoldMinNumPiles = 1; // minimum number of gold piles
+static const int GoldMaxNumPiles = 2; // maximum number of gold piles
 
 /****************** local types *********************/
 typedef struct goldPile {
@@ -26,16 +26,18 @@ typedef struct game {
   player_t** players;
   goldPile_t** goldPiles;
   GameMap_t* map;
-  bool spectatorJoined;
+  bool spectatorActive;
 } game_t;
 
 //global types
 game_t* game;
+bool gameOver = false;
 
 //function prototypes
 void initializeGame();
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 void updateSpectatorDisplay();
+void removeSpectator();
 bool spectatorActive();
 void distributeGold();
 void collectGold(player_t* player);
@@ -45,9 +47,13 @@ void callCommand(player_t* player, char key);
 void sendGrid(player_t* player, bool isSpectator);
 void sendDisplay(player_t* player, bool isSpectator);
 char** initializePlayerMap(int row, int col);
+void updateCurrentPlayerVision();
 player_t* spectatorJoin(addr_t address, char* name);
 player_t* playerJoin(addr_t address, char* name);
 player_t* checkPlayerJoined(addr_t address);
+void playerQuit(player_t* player);
+void spectatorQuit(player_t* spectator);
+void sendGameSummary();
 void cleanUpGame();
 
 int 
@@ -77,7 +83,6 @@ main(int argc, char* argv[])
   // shut down the message module
   message_done();
   
-  cleanUpGame();
   return ok? 0 : 1; // status code depends on result of message_loop
 }
 
@@ -87,63 +92,63 @@ main(int argc, char* argv[])
 void 
 initializeGame() 
 {
-  //TO DO:
-  /*
-   * put functions here and other stuff to initialize the game 
-   */
-  //load create the game
-  //load the map
   game = malloc(sizeof(game_t));
   if (game == NULL) {
     return;
   }
-  game->map = loadMapFile("../maps/main.txt");
+  game->map = loadMapFile("../maps/fewspots.txt");
   game->players = malloc(MaxPlayers * sizeof(player_t*));
+  for (int i = 0; i < MaxPlayers; i++) {
+    game->players[i] = NULL;
+  }   
   if (game->players == NULL) {
     return;
   }
   game->currentNumPlayers = 0;
-  game->spectatorJoined = false;
+  game->spectatorActive = false;
   distributeGold();
 }
 
 static bool
 handleMessage(void* arg, const addr_t from, const char* message)
 {
-  char command[10]; //store the command
-  char name[100];
-  char* okMessage = malloc(10 * sizeof(char)); //used to store message that contains client's charID (sent to client)
+  char command[20]; //store the command
+  char name[30];
 
-  //TO DO:
-  /*
-   * check who sent the message
-   * check if they exist in the array (loop through and use )
-   * 
-   */
-  printf("%s\n", message);
   player_t* player;
   if (sscanf(message, "PLAY %s", name) == 1) {
-    player = playerJoin(from, name); 
+    char* playerName = malloc(30 * sizeof(char));
+    strcpy(playerName, name);
+    player = playerJoin(from, playerName); 
     addr_t playerAddress = getPlayerAddress(player);
     char playerID = getCharacterID(player);
-    char* playerName = getPlayerName(player);
-    printf("%s joined the game with an id %c\n", playerName, playerID);
+    char* okMessage = malloc(10 * sizeof(char)); //used to store message that contains client's charID (sent to client)
     sprintf(okMessage, "OK %c", playerID);
     message_send(playerAddress, okMessage);
     sendGrid(player, false);
     sendDisplay(player, false);
+    updateCurrentPlayerVision();
     updateSpectatorDisplay();
     free(okMessage);
   } else if (sscanf(message, "KEY %s", command) == 1) {
     player = checkPlayerJoined(from); 
     if (player == NULL) {
-      return false; //don't do anything -- keep running
+      //if the spectator is in the game and none of the players sent the message,
+      //we know the messaage game from the spectator
+      if (game->spectatorActive) {
+        player = game->players[MaxPlayers-1];
+      } else {
+        return false; //don't do anything -- keep running
+      }
     }
     char key = command[0];
-    char* playerName = getPlayerName(player);
-    printf("received key %c from %s\n", key, playerName);
     callCommand(player, key);
-  } else if (strcmp(message, "SPECATE")) {
+  } else if (strcmp(message, "SPECTATE") == 0) {
+    // check if there is already a spectator in the game
+    // if so, remove them and replace
+    if (game->spectatorActive) {
+      removeSpectator();
+    }
     char* spectatorName = malloc(strlen("SPECTATOR")+1 * sizeof(char));
     strcpy(spectatorName, "SPECTATOR");
     player = spectatorJoin(from, spectatorName);
@@ -151,8 +156,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
     message_send(spectatorAddress, "OK A");
     sendGrid(player, true);
     sendDisplay(player, true);
-  } 
-  else {
+  } else {
     char invalidMessage[100];
     sprintf(invalidMessage, "Invalid message format: %s", message);
     message_send(from, invalidMessage);
@@ -166,10 +170,22 @@ handleMessage(void* arg, const addr_t from, const char* message)
  */
 void callCommand(player_t* player, char key) 
 { 
-  bool atGold = false;
+  int atGold = 0;
   switch (key) {
     case 'Q':
-      exit(1);
+      //check if its the spectator
+      if (game->spectatorActive) {
+        player_t* spectator = game->players[MaxPlayers-1];
+        addr_t spectatorAddress = getPlayerAddress(spectator);
+        addr_t playerAddress = getPlayerAddress(player);
+        if (message_eqAddr(playerAddress, spectatorAddress)) {
+          printf("here lol\n");
+          spectatorQuit(spectator);
+        }
+      } else {
+        playerQuit(player);
+      }
+      break;
     case 'h':
       atGold = moveLeft(player, game->players);    
       break;
@@ -220,13 +236,14 @@ void callCommand(player_t* player, char key)
       printf("not a valid command\n");
       break;
   }
-  if (atGold) {
+  if (atGold == 1) {
     collectGold(player);
   }
   //send to client
-  sendDisplay(player, false); 
-  
-  updateSpectatorDisplay();
+  if (key != 'Q') {
+    sendDisplay(player, false); 
+    updateSpectatorDisplay();
+  }
 }
 
 /*
@@ -236,32 +253,20 @@ void
 updateSpectatorDisplay() 
 {
   //send update to spectator
-  player_t* spectator = game->players[MaxPlayers-1];
-  if (spectatorActive()) {
+  if (game->spectatorActive) {
+    player_t* spectator = game->players[MaxPlayers-1];
     sendDisplay(spectator, true);
   }
 }
 
 /* 
- * Check if the spectator is active
- */
-bool
-spectatorActive() 
-{
-  player_t* spectator = game->players[MaxPlayers-1];
-  if (spectator == NULL) {
-    return false;
-  }
-  return true;
-}
-
-/* 
- * If another client joins as a spectator, kick the old one and replace them 
+ * If another client joins as a spectator, kick the old one
  */
 void
-replaceSpectator() 
+removeSpectator() 
 {
-
+  player_t* currSpectator = game->players[MaxPlayers-1];
+  spectatorQuit(currSpectator);
 }
 
 /*
@@ -341,16 +346,8 @@ void distributeGold()
     goldPile->amount++;
   }
 
-  //FOR TESTING: print amount of gold in each pile
-  /*
-  for (int i = 0; i < game->numGoldPiles; i++) {
-    goldPile_t* goldPile = game->goldPiles[i];
-    printf("pile %d, amount: %d\n", i, goldPile->amount);
-  }
-  */
-
   free(indices);
-  delete2DIntArr(roomCells, size);
+  delete2DIntArr(roomCells, size+1);
 }
 
 void 
@@ -374,15 +371,19 @@ collectGold(player_t* player)
       addr_t playerAddress = getPlayerAddress(player);
       message_send(playerAddress, goldMessage);
       //check if the spectator is present, if so we need to update their banner
-      if (spectatorActive()) {
+      if (game->spectatorActive) {
         char playerID = getCharacterID(player);
         sprintf(goldMessage, "SPECTATOR_GOLD %c %d %d %d", playerID, pileAmount, currPlayerGold, game->goldRemaining);
         player_t* spectator = game->players[MaxPlayers-1];
         addr_t spectatorAddress = getPlayerAddress(spectator);
         message_send(spectatorAddress, goldMessage);
+      }  
+      free(goldMessage); 
+      //check if all piles have been collected
+      if (game->goldRemaining == 0) {
+        printf("sending summary\n");
+        sendGameSummary();
       }
-      goldPile->amount = 0;
-      free(goldMessage);
       break;
     }
   }
@@ -407,7 +408,6 @@ spawnPlayer(player_t* player, int row, int col)
   setCellType(game->map, id, row, col);
   char** playerMap = getPlayerMap(player);
   playerMap[row][col] = '@';
-  sendDisplay(player, false);
 }
 
 /*
@@ -425,16 +425,35 @@ sendGrid(player_t* player, bool isSpectator)
   int numRows = getNumRows(game->map);
   int numCols = getNumCols(game->map);
   //printf("%d %d", numRows, numCols); //testing
+  /*
   if (isSpectator) {
     sprintf(sizeMessage, "SPECTATOR_GRID %d %d", numRows, numCols);
   } else {
     sprintf(sizeMessage, "GRID %d %d", numRows, numCols);
   }
+  */
+  sprintf(sizeMessage, "GRID %d %d", numRows, numCols);
   addr_t address = getPlayerAddress(player);
   message_send(address, sizeMessage);
   free(sizeMessage);
 }
 
+/*
+ * This function is specifically used to call all
+ * existing players to update their vision whenever a new 
+ * player joins or when a player quits.
+ */
+void
+updateCurrentPlayerVision()
+{
+  for (int i = 0; i < game->currentNumPlayers; i++) {
+    player_t* player = game->players[i];
+    bool playerActive = getPlayerActive(player);
+    if (playerActive) {
+      sendDisplay(player, false);
+    }
+  }
+}
 
 /*
  * Sends the map to the client (player)
@@ -460,12 +479,12 @@ sendDisplay(player_t* player, bool isSpectator)
   } else {
     grid = getGameGrid(game->map);
   }
-  int size = strlen("DISPLAY ") + numRows * numCols + 1;
+  int size = strlen("DISPLAY\n") + numRows * numCols + 1;
   char* gridMessage = malloc(size * sizeof(char));
   if (gridMessage == NULL) {
     return;
   }
-  strcpy(gridMessage, "DISPLAY ");
+  strcpy(gridMessage, "DISPLAY\n");
   int pos = strlen(gridMessage);
   for (int i = 0; i < numRows; i++) {
     for (int j = 0; j < numCols; j++) {
@@ -475,7 +494,7 @@ sendDisplay(player_t* player, bool isSpectator)
   gridMessage[pos] = '\0';
   //printf("here\n");
   //printf("%s\n", gridMessage); //testing messages
-  printMap(game->map);
+  //printMap(game->map);
   message_send(address, gridMessage);
 
   //free pointers
@@ -496,10 +515,12 @@ initializePlayerMap(int row, int col)
   if (grid == NULL) {
     return NULL;
   }
+
   for (int row = 0; row < numRows; row++) {
     grid[row] = malloc(numCols * sizeof(char));
     memset(grid[row], ' ', numCols);
   }
+  
 
   //set the visible region
   int** visibleRegion = getVisibleRegion(game->map, row, col);
@@ -514,7 +535,7 @@ initializePlayerMap(int row, int col)
     grid[visibleRow][visibleCol] = getCellType(game->map, visibleRow, visibleCol);
     size++;
   }
-  delete2DIntArr(visibleRegion, size);
+  delete2DIntArr(visibleRegion, size+1);
   return grid;
 }
 
@@ -526,17 +547,18 @@ player_t*
 spectatorJoin(addr_t address, char* name)
 {
   //check if a specatator has already joined
-  if (game->spectatorJoined) {
+  if (game->spectatorActive) {
     return NULL;
   }
   player_t* spectator; 
   //initialize spectator's information
-  spectator = player_new('~', game->map, NULL, 0, NULL, 0, 0, address);
+  spectator = player_new('A', game->map, NULL, 0, name, 0, 0, address);
   if (spectator == NULL) {
     fprintf(stderr, "error initializing spectator\n");
     return NULL;
   }
   game->players[MaxPlayers-1] = spectator; //put them at the end of the array
+  game->spectatorActive = true;
   return spectator;
 }
 
@@ -581,7 +603,7 @@ playerJoin(addr_t address, char* name)
     spawnPlayer(newPlayer, row, col);
     printf("new player has been added\n");
 
-    delete2DIntArr(roomCells, numRoomCells);
+    delete2DIntArr(roomCells, numRoomCells+1);
     // add player to array of players after their setup is done
     game->players[currentNumPlayers] = newPlayer; 
     game->currentNumPlayers++;
@@ -604,7 +626,6 @@ checkPlayerJoined(addr_t address)
     player_t* player = game->players[i];
     addr_t playerAddress = getPlayerAddress(player);
     if (message_eqAddr(playerAddress, address)) {
-      printf("addresses are equal\n");
       return player;
     }
   }
@@ -612,27 +633,113 @@ checkPlayerJoined(addr_t address)
 }
 
 /*
+ * Removes player from map and makes their status inactive
+ */
+void
+playerQuit(player_t* player) 
+{
+  //remove player from map
+  int playerRow = getPlayerRow(player);
+  int playerCol = getPlayerCol(player);
+
+  restoreCell(game->map, playerRow, playerCol); //turns the playerID back to the terrain
+
+  //make player inactive
+  setPlayerInactive(player);
+
+  //update all the ACTIVE player's vision 
+  updateCurrentPlayerVision();
+
+  //send quit message to client 
+  addr_t playerAddress = getPlayerAddress(player);
+  message_send(playerAddress, "QUIT Thanks for playing!");
+}
+
+/* 
+ * Remove spectator 
+ */
+void
+spectatorQuit(player_t* spectator) {
+  game->spectatorActive = false;
+
+  addr_t spectatorAddress = getPlayerAddress(spectator);
+  message_send(spectatorAddress, "QUIT Thanks for watching!");
+  player_delete(spectator);
+}
+
+/* 
+ * Sends the summary of the game to the clients 
+ */
+void
+sendGameSummary() 
+{
+  char* gameOverMessage = malloc(1000 * sizeof(char));
+  strcpy(gameOverMessage, "QUIT GAME OVER:\n");
+  
+  //create the messsage
+  char buffer[25];
+  int offset = strlen(gameOverMessage);
+  for (int i = 0; i < game->currentNumPlayers; i++) {
+    player_t* player = game->players[i];
+    char playerID = getCharacterID(player);
+    int playerGold = getPlayerGold(player);
+    char* playerName = getPlayerName(player);
+    int len = sprintf(buffer, "%c          %d %s\n", playerID, playerGold, playerName);
+    strcpy(gameOverMessage + offset, buffer); // append the line
+    offset += len; // move offset over for next append
+  }
+  printf("test: %s\n", gameOverMessage);
+
+  //send the message to active players
+  for (int i = 0; i < game->currentNumPlayers; i++) {
+    player_t* player = game->players[i];
+    bool playerActive = getPlayerActive(player);
+    addr_t playerAddress = getPlayerAddress(player);
+    if (playerActive) {
+      message_send(playerAddress, gameOverMessage);
+    }
+  }
+  free(gameOverMessage);
+  cleanUpGame();
+}
+
+
+/*
  * Clean up the game by freeing any allocated memory
  */
 void
 cleanUpGame() 
 {
-  //free any dynamically allocated data for each player in the game
+  //free any dynamically allocated data for each player that joined the game
   for (int i = 0; i < game->currentNumPlayers; i++) {
     player_t* player = game->players[i];
-    player_delete(player);
+    if (player != NULL) {
+      player_delete(player);
+    }
   }
+
+  //free the spectator if they are in the game
+  if(game->spectatorActive) {
+    player_t* spectator = game->players[MaxPlayers-1];
+    spectatorQuit(spectator);
+  }
+
+  free(game->players);
   
   //free the gold piles
   for (int i = 0; i < game->numGoldPiles; i++) {
-    free(game->goldPiles[i]);
+    if (game->goldPiles[i] != NULL) {
+      free(game->goldPiles[i]);
+    }
   }
+  free(game->goldPiles);
 
   //free the bigger structs
-  free(game->players);
-  free (game->goldPiles);
-  free(game->map);
+  deleteGameMap(game->map);
 
   //free the game itself
+  
   free(game);
+  message_done();
+  exit(0);
 }

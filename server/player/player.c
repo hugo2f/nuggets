@@ -30,12 +30,12 @@ char** getPlayerMap(player_t* player);
 int getPlayerRow(player_t* player);
 int getPlayerCol(player_t* player);
 addr_t getPlayerAddress(player_t* player);
+bool getPlayerActive();
+void setPlayerInactive(player_t* player);
 void addGold(player_t* player, int amount);
 void stealGold(player_t* player1, player_t* player2);
 void updatePlayerPosition(player_t* player);
 char getCharacterID(player_t* player);
-bool player_isActive(player_t* player);
-void player_inActive(player_t* player);
 int moveDownRight(player_t* player, player_t** players);
 int moveDownLeft(player_t* player, player_t** players);
 int moveUpRight(player_t* player, player_t** players);
@@ -71,10 +71,20 @@ player_t* player_new(char ID, GameMap_t* map, char** grid, int gold, char* name,
  */
 void player_delete(player_t* player) 
 {
-  free(player->name);
-  deleteGrid(player->playerMap, getNumRows(player->gameMap));
+  if (player->name != NULL) {
+    free(player->name);
+    player->name = NULL;
+  }
+  if (player->playerMap != NULL) {
+    deleteGrid(player->playerMap, getNumRows(player->gameMap));
+    player->playerMap = NULL;
+  }
+  free(player);
 }
 
+/*
+ * Return the player's name
+ */
 char* 
 getPlayerName(player_t* player) 
 {
@@ -140,6 +150,16 @@ player_t* getPlayerByID(player_t** players, char ID)
 }
 
 /*
+ * Returns whether a player is active or not 
+ */
+
+bool
+getPlayerActive(player_t* player) 
+{
+  return player->active;  
+}
+
+/*
  * Add gold to a player's amount
  */
 void 
@@ -175,12 +195,17 @@ void
 updatePlayerPosition(player_t* player) 
 {
   //set the visible region
+
+  if (player == NULL) {
+    return;
+  }
+  
   char** grid = player->playerMap;
   int numRows = getNumRows(player->gameMap);
   int numCols = getNumCols(player->gameMap);
 
-  int row = player->row;
-  int col = player->col;
+  int playerRow = player->row;
+  int playerCol = player->col;
 
   for (int row = 0; row < numRows; row++) {
     for (int col = 0; col < numCols; col++) {
@@ -190,7 +215,7 @@ updatePlayerPosition(player_t* player)
     }
   }
 
-  int** visibleRegion = getVisibleRegion(player->gameMap, row, col);
+  int** visibleRegion = getVisibleRegion(player->gameMap, playerRow, playerCol);
   if (visibleRegion == NULL) {
     printf("can't move there\n");
     return;
@@ -203,8 +228,8 @@ updatePlayerPosition(player_t* player)
     size++;
   }
   //set the player's location
-  grid[row][col] = '@';
-  delete2DIntArr(visibleRegion, size);
+  grid[playerRow][playerCol] = '@';
+  delete2DIntArr(visibleRegion, size+1);
 }
       
 char getCharacterID(player_t* player)
@@ -212,12 +237,7 @@ char getCharacterID(player_t* player)
   return player->characterID;
 }
 
-bool player_isActive(player_t* player)
-{
-  return player->active;
-}
-
-void player_inActive(player_t* player)
+void setPlayerInactive(player_t* player)
 {
   player->active = false;
 }
@@ -232,7 +252,7 @@ int moveDownRight(player_t* player, player_t** players)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row+1, player->col+1))) {
-    if(player_isActive(player)){
+    if(getPlayerActive(player)){
       if(getCellType(player->gameMap, player->row +1, player->col +1) == '#' ||
           getCellType(player->gameMap, player->row +1, player->col +1) == '.'){
         setCellType(player->gameMap, player->characterID, player->row +1, player->col +1);
@@ -276,7 +296,7 @@ int moveDownLeft(player_t* player, player_t** players)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row+1, player->col-1))){
-    if(player_isActive(player)){
+    if(getPlayerActive(player)){
       if(getCellType(player->gameMap, player->row +1, player->col -1) == '#' ||
           getCellType(player->gameMap, player->row +1, player->col -1) == '.'){
         setCellType(player->gameMap, player->characterID, player->row +1, player->col -1);
@@ -320,7 +340,7 @@ int moveUpRight(player_t* player, player_t** players)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row-1, player->col+1))){
-    if(player_isActive(player)){
+    if(getPlayerActive(player)){
       if(getCellType(player->gameMap, player->row -1, player->col +1) == '#' ||
           getCellType(player->gameMap, player->row -1, player->col +1) == '.'){
         setCellType(player->gameMap, player->characterID, player->row -1, player->col +1);
@@ -364,7 +384,7 @@ int moveUpLeft(player_t* player, player_t** players)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row-1, player->col-1))){
-    if(player_isActive(player)){
+    if(getPlayerActive(player)){
       if(getCellType(player->gameMap, player->row -1, player->col -1) == '#' ||
           getCellType(player->gameMap, player->row -1, player->col -1) == '.'){
         setCellType(player->gameMap, player->characterID, player->row -1, player->col -1);
@@ -408,7 +428,7 @@ int moveUp(player_t* player, player_t** players)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row-1, player->col))){
-    if(player_isActive(player)){
+    if(getPlayerActive(player)){
       if(getCellType(player->gameMap, player->row -1, player->col) == '#' ||
           getCellType(player->gameMap, player->row -1, player->col) == '.'){
         setCellType(player->gameMap, player->characterID, player->row -1, player->col);
@@ -447,7 +467,7 @@ int moveDown(player_t* player, player_t** players)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row+1, player->col))){
-    if(player_isActive(player)){
+    if(getPlayerActive(player)){
       if(getCellType(player->gameMap, player->row +1, player->col) == '#' ||
           getCellType(player->gameMap, player->row +1, player->col) == '.'){
         setCellType(player->gameMap, player->characterID, player->row +1, player->col);
@@ -473,7 +493,6 @@ int moveDown(player_t* player, player_t** players)
     updatePlayerPosition(player);
     return flag;
   }
-  printf("returned 2");
   return 2;
 }
 
@@ -487,7 +506,7 @@ int moveLeft(player_t* player, player_t** players)
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row, player->col-1))) {
-    if(player_isActive(player)){
+    if(getPlayerActive(player)){
       if(getCellType(player->gameMap, player->row, player->col-1) == '#' ||
           getCellType(player->gameMap, player->row, player->col-1) == '.'){
         setCellType(player->gameMap, player->characterID, player->row, player->col-1);
@@ -526,7 +545,7 @@ int moveRight(player_t* player, player_t* players[])
 {
   int flag = 0;
   if(player != NULL && !isWall(getCellType(player->gameMap, player->row, player->col+1))) {
-    if(player_isActive(player)){
+    if(getPlayerActive(player)){
       if(getCellType(player->gameMap, player->row, player->col+1) == '#' ||
           getCellType(player->gameMap, player->row, player->col+1) == '.'){
         setCellType(player->gameMap, player->characterID, player->row , player->col+1);
