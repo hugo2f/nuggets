@@ -25,7 +25,7 @@ static void parseArgs(int argc, char* argv[], addr_t* serverp);
 static bool respondToInput(void* server);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 static void setPlayerName(const int argc, char* argv[]);
-static int getMapSize(); 
+static int getMapSize();
 void unitTest(const addr_t from);
 
 // global constants; see .h for more details.
@@ -172,21 +172,22 @@ handleMessage(void* arg, const addr_t from, const char* message)
     } else if (strcmp(messageHeader, "GOLD") == 0) {
         handle_player_gold(remainder);
     } else if (strcmp(messageHeader, "QUIT") == 0) {
-        char quit[1000]; // allocate buffer for quit message
-        
-        // get quit message
-        if (sscanf(message, "QUIT %[^#]", quit) != 1) {
-            fprintf(stderr, "Failed to retrieve quit message\n");
-            send_receipt((addr_t *)&from);
-            return false; // continue message loop 
+        char* skip = "QUIT ";
+        char* found;
+
+        found = strstr(message, skip);
+        if (found != NULL) {
+            char* quit = found + strlen(skip);
+            handle_quit(quit);
+        } else {
+            fprintf(stderr, "Malformed QUIT message\n");
         }
-        
-        handle_quit(quit);
     } else if (strcmp(messageHeader, "ERROR") == 0) {
         handle_error(remainder);
     } else if (strcmp(messageHeader, "SPECTATOR_GOLD") == 0) {
         handle_spectator_gold(remainder);
     } else if (strcmp(messageHeader, "DISPLAY") == 0) {
+        #ifdef MINISERVER_TEST
         int mapsize = getMapSize(); // get map size
 
         // get format string that limits command length (to avoid stack smashing), error and continue upon failure
@@ -205,7 +206,19 @@ handleMessage(void* arg, const addr_t from, const char* message)
             return false; // continue message loop 
         }
 
-        handle_display(map);  
+        handle_display(map);
+        #else
+        char* skip = "DISPLAY\n";
+        char* found;
+
+        found = strstr(message, skip);
+        if (found != NULL) {
+            char* map = found + strlen(skip);
+            handle_display(map);
+        } else {
+            fprintf(stderr, "Malformed DISPLAY message\n");
+        }
+        #endif
     } else if (strcmp(messageHeader, "GOLD_REMAINING") == 0) {
         handle_starting_gold_remaining(remainder);
     } else if (strcmp(messageHeader, "STOLEN") == 0) {
@@ -308,7 +321,8 @@ unitTest(const addr_t from)
     fclose(testCommandsFile);
 
     // indicate tests over
-    printf("TESTING COMPLETE, CONTINUING TO NORMAL EXECUTION\n");
+    printf("TESTING COMPLETE\n");
+    exit(0);
     #else
     fprintf(stderr, "Running release build"); // indicate that we are in release mode on log
     #endif

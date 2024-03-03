@@ -109,14 +109,14 @@ handle_starting_gold_remaining(char* startingGoldRemainingString)
     
     // ensure that client already received GRID
     if (client.state != GRID_RECEIVED) {
-        fprintf(stderr, "Received SPECTATOR_GOLD prior to game start or for a second time\n");
+        fprintf(stderr, "Received GOLD_REMAINING prior to GRID or for a second time\n");
         errors++;
     }
     
     // extract gold remaining number
     int startingGoldRemaining;
     if (sscanf(startingGoldRemainingString, "%d", &startingGoldRemaining) != 1) {
-        fprintf(stderr, "SPECTATOR_GOLD message bad data\n");
+        fprintf(stderr, "GOLD_REMAINING message bad data\n");
         errors++;
     }
 

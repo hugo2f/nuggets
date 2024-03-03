@@ -17,8 +17,10 @@ S = ../support
 LLIBS = $(S)/support.a
 LIBS = -lm -lcurses
 
-# flag for testing on the miniserver (comment for final build)
+# flag for testing on the miniserver (comment out for final build)
 MINISERVER_TEST=-DMINISERVER_TEST
+
+# flag for running unit tests (comment out for final build)
 UNIT_TEST=-DUNIT_TEST
 
 # compilation flags (used by default)
