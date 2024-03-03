@@ -14,7 +14,7 @@
 /*
  * Handles messages of the form "OK [allCapsCharacter]"
  *
- * Runs in CLIENT_START_SENT state. 
+ * Runs in START_SENT state. 
  * 
  * Robust with respect to allCapsCharacter being a string: it attempts to make the first character of that
  * string the player symbol.
@@ -26,27 +26,37 @@ void handle_okay(char* symbol);
 /*
  * Handles messages of the form "GRID [nrows] [ncols]"
  *
- * Runs in CLIENT_OKAY_RECEIVED state. 
+ * Runs in OK_RECEIVED state. 
  * 
- * Handler initializes curses display, prints the status banner according to the client type, and 
- * advances the client state.
+ * Handler initializes curses display, sets client nrowsBoard and ncolsBoard, and advances the client 
+ * state.
  */
 void handle_grid(char* coordinates); 
 
 /*
+ * Handles messages of the form "STARTING_GOLD_REMAINING"
+ *
+ * Runs in GRID_RECEIVED state
+ * 
+ * Handler prints banner according to gold remaining and advances the client state.
+ * 
+ */
+void handle_starting_gold_remaining(char* startingGoldRemainingString);
+
+/*
  * Handles messages of the form "GOLD [collected] [current] [remaining]"
  *
- * Runs in CLIENT_PLAY state for player. 
+ * Runs in PLAY state for player. 
  * 
  * Handler updates banner according to new values and prints indicator alerting player to the collected 
  * gold.
  */
-void handle_gold(char* counts);
+void handle_player_gold(char* counts);
 
 /*
  * Handles messages of the form "SPECTATOR_GOLD [playerSymbol] [collected] [current] [remaining]"
  *
- * Runs in CLIENT_PLAY state for spectator. 
+ * Runs in PLAY state for spectator. 
  * 
  * Handler updates banner according to new values and prints indicator alerting spectator to the collected 
  * gold. This function runs every time any player collects.
@@ -56,9 +66,9 @@ void handle_spectator_gold(char* collectionData);
 /*
  * Handles messages of the form "DISPLAY [map]"
  *
- * Runs in CLIENT_PLAY or CLIENT_GRID_RECEIVED states. 
+ * Runs in PLAY or GRID_RECEIVED states. 
  * 
- * Handler displays map and advances state if the current state is not already CLIENT_PLAY. 
+ * Handler displays map and advances state if the current state is not already PLAY. 
  */
 void handle_display(char* map); 
 

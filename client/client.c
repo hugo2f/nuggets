@@ -27,7 +27,7 @@ static void setPlayerName(const int argc, char* argv[]);
 static int getMapSize(); 
 
 // project-wide global client struct - type defined in clientdata.h 
-ClientData client = {NULL, '\0', 0, 0, 0, 0, CLIENT_PRE_INIT};
+ClientData client = {NULL, '\0', 0, 0, 0, 0, PRE_INIT};
 
 // global constants
 const int MAXIMUM_NAME_LENGTH = 50;
@@ -68,7 +68,7 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
     }
 
     // attempts initialize message module, errors and exits if it cannot
-    if (message_init(stderr) == 0) {
+    if (message_init(NULL) == 0) {
         fprintf(stderr, "Could not initialize message module\n");
         exit(3);
     }
@@ -103,7 +103,7 @@ static bool
 respondToInput(void* server) 
 {    
     // only respond to user input when a game is in session
-    if (client.state != CLIENT_PLAY) {
+    if (client.state != PLAY) {
         return false;
     }
     
@@ -166,7 +166,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
     } else if (strcmp(messageHeader, "GRID") == 0) {
         handle_grid(remainder);
     } else if (strcmp(messageHeader, "GOLD") == 0) {
-        handle_gold(remainder);
+        handle_player_gold(remainder);
     } else if (strcmp(messageHeader, "QUIT") == 0) {
         char quit[1000]; // allocate buffer for quit message
         
@@ -202,6 +202,8 @@ handleMessage(void* arg, const addr_t from, const char* message)
         }
 
         handle_display(map);  
+    } else if (strcmp(messageHeader, "STARTING_GOLD_REMAINING") == 0) {
+        handle_starting_gold_remaining(remainder);
     } else {
         fprintf(stderr, "%s is an invalid message header\n", messageHeader); // bad message header
     }

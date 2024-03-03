@@ -5,11 +5,12 @@
 #include <stdio.h>
 
 typedef enum {
-    CLIENT_PRE_INIT,
-    CLIENT_START_SENT,
-    CLIENT_OKAY_RECEIVED,
-    CLIENT_GRID_RECEIVED,
-    CLIENT_PLAY
+    PRE_INIT,
+    START_SENT,
+    OK_RECEIVED,
+    GRID_RECEIVED,
+    STARTING_GOLD_REMAINING_RECEIVED,
+    PLAY
 } ClientState;
 
 typedef struct {

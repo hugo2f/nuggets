@@ -31,7 +31,7 @@ send_receipt(addr_t* serverp)
     // product
     #ifdef MINISERVER_TEST
 	// we only send receipts during initialization
-    if (client.state != CLIENT_PLAY && client.state != CLIENT_PRE_INIT) {
+    if (client.state != PLAY && client.state != PRE_INIT) {
         message_send(*serverp, "RECEIVED");
     }
 	#else
@@ -46,7 +46,7 @@ void
 send_start(addr_t* serverp) 
 {
     // ensures that we are not sending start a second time
-    if (client.state != CLIENT_PRE_INIT) {
+    if (client.state != PRE_INIT) {
         fprintf(stderr, "Sent START again\n");
         return;
     }
@@ -59,17 +59,17 @@ send_start(addr_t* serverp)
     }
 
     // advance client state
-    client.state = CLIENT_START_SENT;
+    client.state = START_SENT;
 }
 
 /*
  * Sends key to server; see .h for more details. 
  */
-void 
+void
 send_key(addr_t* serverp, char key) 
 {
     // ensures client is currently running a game session
-    if (client.state != CLIENT_PLAY) {
+    if (client.state != PLAY) {
         return;
     }
 
