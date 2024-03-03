@@ -99,6 +99,9 @@ handle_grid(char* coordinates)
     client.state = GRID_RECEIVED;
 }
 
+/*
+ * Runs upon receiving message from server with the STARTING_GOLD_REMAINING header; see .h for more details.
+ */
 void
 handle_starting_gold_remaining(char* startingGoldRemainingString)
 {
@@ -134,6 +137,7 @@ handle_starting_gold_remaining(char* startingGoldRemainingString)
         display_spectator_banner(startingGoldRemaining);
     }
     
+    // advance client state
     client.state = STARTING_GOLD_REMAINING_RECEIVED;
 }
 
