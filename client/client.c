@@ -261,7 +261,7 @@ setPlayerName(const int argc, char* argv[])
 static int
 getMapSize() 
 {
-    int mapsize = client.ncolsBoard * client.nrowsBoard;
+    int mapsize = client.ncolsMap * client.nrowsMap;
     mapsize = (mapsize == 0) ? MAXIMUM_MAP_SIZE : mapsize;
     return mapsize;
 }

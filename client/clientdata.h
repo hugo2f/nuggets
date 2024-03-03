@@ -16,8 +16,8 @@ typedef enum {
 typedef struct {
     char* playerName;
     char playerSymbol;
-    int nrowsBoard;
-    int ncolsBoard;
+    int nrowsMap;
+    int ncolsMap;
     int nrowsScreen;
     int ncolsScreen;
     int state;

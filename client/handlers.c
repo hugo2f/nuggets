@@ -92,8 +92,8 @@ handle_grid(char* coordinates)
     init_curses(nrows, ncols);
 
     // sets client nrows and client ncols which are global and used elswhere 
-    client.nrowsBoard = nrows;
-    client.ncolsBoard = ncols;
+    client.nrowsMap = nrows;
+    client.ncolsMap = ncols;
 
     // advance game state
     client.state = GRID_RECEIVED;

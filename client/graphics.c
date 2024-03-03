@@ -29,7 +29,7 @@ static void moveToNormalBannerEnd();
 /*
  * Initialize curses; see .h for more details. 
  */
-bool
+void
 init_curses(int nrows, int ncols)
 {
     // ensures window size is large enough, prompts user to expand it and waits if not
@@ -61,9 +61,6 @@ init_curses(int nrows, int ncols)
 
     // enable attributes with color pair 1
     attron(COLOR_PAIR(1));
-
-    // return true to indicate successful initialization
-    return true;
 }
 
 /*
@@ -82,13 +79,13 @@ display_map(char* map)
         char c = map[i];
 
         // if end of row reached, return
-        if (x >= client.ncolsBoard) {
+        if (x >= client.ncolsMap) {
             x = 0;
             y++;
         }
 
         // if end of available board space reached, end
-        if (y >= client.nrowsBoard + 1) {
+        if (y >= client.nrowsMap + 1) {
             break;
         }
 
@@ -134,12 +131,12 @@ display_player_banner(char playerSymbol, int playerNuggets, int unclaimedNuggets
  * Displays banner for client in spectator mode; see .h file for more details.
  */
 void 
-display_spectator_banner(const int remaining)
+display_spectator_banner(const int unclaimedNuggets)
 {
     
     move(0, 0); // move to top left of the screen
     clrtoeol(); // clear to end of line
-    mvprintw(0, 0, "Spectating: %d gold remaining.", remaining); // print banner string 
+    mvprintw(0, 0, "Spectating: %d nuggets unclaimed.", unclaimedNuggets); // print banner string 
     refresh(); // update display with new changes
 }
 
