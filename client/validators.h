@@ -1,7 +1,7 @@
 /*
  * validators.h
  *
- * Description: contains interface for validation functions.
+ * Description: contains interface for validation module.
  * 
  * Author: Joseph Hirsh
  * Date: March 2st, 2024
