@@ -168,7 +168,16 @@ handleMessage(void* arg, const addr_t from, const char* message)
     } else if (strcmp(messageHeader, "GOLD") == 0) {
         handle_gold(remainder);
     } else if (strcmp(messageHeader, "QUIT") == 0) {
-        handle_quit(remainder);
+        char quit[1000]; // allocate buffer for quit message
+        
+        // get quit message
+        if (sscanf(message, "QUIT %[^#]", quit) != 1) {
+            fprintf(stderr, "Failed to retrieve quit message\n");
+            send_receipt((addr_t *)&from);
+            return false; // continue message loop 
+        }
+        
+        handle_quit(quit);
     } else if (strcmp(messageHeader, "ERROR") == 0) {
         handle_error(remainder);
     } else if (strcmp(messageHeader, "SPECTATOR_GOLD") == 0) {
@@ -180,6 +189,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         char format[mapsize];
         if (snprintf(format, mapsize, "DISPLAY%%%d[^\n]", mapsize - 1) < 0) {
             fprintf(stderr, "Failed to create map format string\n");
+            send_receipt((addr_t *)&from);
             return false; // continue message loop 
         }
         
