@@ -30,7 +30,7 @@ handle_okay(char* symbol)
     int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
     
     // errors if client attempts to handle OK before it sends START 
-    if (client.state != CLIENT_START_SENT) {
+    if (client.state != START_SENT) {
         fprintf(stderr, "Received OK again or prior to sending START\n");
         errors++;
     }
@@ -58,7 +58,7 @@ handle_okay(char* symbol)
     client.playerSymbol = symbolCharacter;
 
     // and advances to the next client state 
-    client.state = CLIENT_OKAY_RECEIVED;
+    client.state = OK_RECEIVED;
 }
 
 /*
@@ -70,8 +70,8 @@ handle_grid(char* coordinates)
     int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
     
     // errors if client attempts to handle GRID before it handles OK 
-    if (client.state != CLIENT_OKAY_RECEIVED) {
-        fprintf(stderr, "Received GRID prior to receiving OK\n");
+    if (client.state != OK_RECEIVED) {
+        fprintf(stderr, "Received GRID prior to receiving OK or for a second time\n");
         errors++;
     }
 
@@ -79,7 +79,7 @@ handle_grid(char* coordinates)
     
     // extracts values from the coordinates string, and ensures that two values were extracted, erroring if not
     if (sscanf(coordinates, "%d %d", &nrows, &ncols) != 2) {
-        fprintf(stderr, "GRID message missing data\n");
+        fprintf(stderr, "GRID message bad data\n");
         errors++;
     }
 
@@ -92,30 +92,65 @@ handle_grid(char* coordinates)
     init_curses(nrows, ncols);
 
     // sets client nrows and client ncols which are global and used elswhere 
-    client.nrowsBoard = nrows;
-    client.ncolsBoard = ncols;
-
-    // depending on the client mode (player or spectator), display banner
-    if (client.playerName != NULL) {
-        display_player_banner(client.playerSymbol, 0, 0);
-    } else {
-        display_spectator_banner(250);
-    }
+    client.nrowsMap = nrows;
+    client.ncolsMap = ncols;
 
     // advance game state
-    client.state = CLIENT_GRID_RECEIVED;
+    client.state = GRID_RECEIVED;
+}
+
+/*
+ * Runs upon receiving message from server with the GOLD_REMAINING header; see .h for more details.
+ */
+void
+handle_starting_gold_remaining(char* startingGoldRemainingString)
+{
+    int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
+    
+    // ensure that client already received GRID
+    if (client.state != GRID_RECEIVED) {
+        fprintf(stderr, "Received GOLD_REMAINING prior to GRID or for a second time\n");
+        errors++;
+    }
+    
+    // extract gold remaining number
+    int startingGoldRemaining;
+    if (sscanf(startingGoldRemainingString, "%d", &startingGoldRemaining) != 1) {
+        fprintf(stderr, "GOLD_REMAINING message bad data\n");
+        errors++;
+    }
+
+    if (!validate_gold_count(startingGoldRemaining, MAXIMUM_GOLD)) {
+        fprintf(stderr, "Invalid 'startingGoldRemaining' gold count");
+        errors++;
+    }
+
+    // cease execution if error occurred
+    if (errors > 0) {
+        return;
+    }
+    
+    // depending on the client mode (player or spectator), display banner
+    if (client.playerName != NULL) {
+        display_player_banner(client.playerSymbol, 0, startingGoldRemaining);
+    } else {
+        display_spectator_banner(startingGoldRemaining);
+    }
+    
+    // advance client state
+    client.state = GOLD_REMAINING_RECEIVED;
 }
 
 /*
  * Runs upon receiving message from server with the GOLD header; see .h for more details.
  */
 void 
-handle_gold(char* counts) 
+handle_player_gold(char* counts) 
 {
     int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
 
     // ensure that client is currently running a game session (not initializing)
-    if (client.state != CLIENT_PLAY) {
+    if (client.state != PLAY) {
         fprintf(stderr, "Received GOLD prior to game start\n");
         errors++;
     }
@@ -138,18 +173,23 @@ handle_gold(char* counts)
     // update banner with gold statistics
     display_player_banner(client.playerSymbol, current, remaining);
     
-    // show message indicating that player collected nuggets
-    indicate_nuggets_collected_player(collected);
+    // show message indicating that player collected nuggets if collected is not zero
+    if (collected != 0) {
+        indicate_nuggets_collected_player(collected);
+    }
 }
 
+/*
+ * Runs upon receiving message from server with the SPECTATOR_GOLD header; see .h for more details.
+ */
 void
 handle_spectator_gold(char* collectionData)
 {
     int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
 
     // ensure that client is currently running a game session (not initializing)
-    if (client.state != CLIENT_PLAY) {
-        fprintf(stderr, "Received SPECTATOR_GOLD prior to game start\n");
+    if (client.state != PLAY) {
+        fprintf(stderr, "Received SPECTATOR_GOLD prior to PLAY\n");
         errors++;
     }
 
@@ -163,7 +203,7 @@ handle_spectator_gold(char* collectionData)
     char counts[100];
     char collectorSymbol;
     if (sscanf(collectionData, "%c%[^\n]", &collectorSymbol, counts) != 2) {
-        fprintf(stderr, "SPECTATOR_GOLD message missing data\n");
+        fprintf(stderr, "SPECTATOR_GOLD message bad data\n");
         return;
     }
 
@@ -188,6 +228,73 @@ handle_spectator_gold(char* collectionData)
     // show message indicating that player collected nuggets
     indicate_nuggets_collected_spectator(collectorSymbol, collected);
 }
+/*
+ * Runs upon receiving message from server with the STOLEN header; see .h for more details.
+ */
+void 
+handle_stolen(char* stealData)
+{
+    int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
+
+    // ensure that client is currently running a game session (not initializing)
+    if (client.state != PLAY) {
+        fprintf(stderr, "Received STOLEN prior to PLAY\n");
+        errors++;
+    }
+    
+    // extract stolenPlayerSymbol, stealerPlayerSymbol, and amountStolen from stealData
+    char stolenPlayerSymbol, stealerPlayerSymbol;
+    int amountStolen;
+    if (sscanf(stealData, " %c %c %d", &stolenPlayerSymbol, &stealerPlayerSymbol, &amountStolen) != 3) {
+        fprintf(stderr, "STOLEN message bad data\n");
+        return;
+    }
+
+    // ensure amountStolen is valid
+    if (!validate_gold_count(amountStolen, client.maximumGold)) {
+        fprintf(stderr, "Invalid 'amountStolen' gold count\n");
+        errors++;
+    }
+
+    // ensure stolenPlayerSymbol is valid
+    if (!validate_player_symbol(stolenPlayerSymbol)) {
+        fprintf(stderr, "Invalid 'stolenPlayerSymbol' (the player stolen from)\n");
+        errors++;
+    }
+
+    // ensure stealerPlayerSymbol is valid
+    if (!validate_player_symbol(stealerPlayerSymbol)) {
+        fprintf(stderr, "Invalid 'stealerPlayerSymbol' (the player who stole)\n");
+        errors++;
+    }
+    
+    // ensure stolenPlayerSymbol and stealerPlayerSymbol are not the same player
+    if (stolenPlayerSymbol == stealerPlayerSymbol) {
+        fprintf(stderr, "Someone cannot steal from themselves\n");
+        errors++;
+    }
+
+    // cease execution if error occurred
+    if (errors > 0) {
+        return;
+    }
+
+    // display different indication message according to if...
+    if (client.playerName != NULL) {
+        // someone stole from you or
+        if (client.playerSymbol == stolenPlayerSymbol) {
+            indicate_someone_stole_nuggets_from_you(stealerPlayerSymbol, amountStolen);
+        } 
+        // you stole from someone else or
+        else if (client.playerSymbol == stealerPlayerSymbol) {
+            indicate_you_stole_nuggets_from_someone(stolenPlayerSymbol, amountStolen);
+        }
+    } 
+    // you are a spectator
+    else {
+        indicate_nuggets_stolen_spectator(stolenPlayerSymbol, stealerPlayerSymbol, amountStolen);
+    }
+}
 
 /*
  * Runs upon receiving message from server with the DISPLAY header; see .h for more details.
@@ -196,8 +303,8 @@ void
 handle_display(char* map) 
 {
     // ensure that DISPLAY recevied either after GRID received or a during game session
-    if (client.state != CLIENT_GRID_RECEIVED && client.state != CLIENT_PLAY) {
-        fprintf(stderr, "Received DISPLAY prior to receiving GRID\n");
+    if (client.state != GOLD_REMAINING_RECEIVED && client.state != PLAY) {
+        fprintf(stderr, "Received DISPLAY prior to receiving GOLD_REMAINING\n");
         return;
     }
 
@@ -205,8 +312,8 @@ handle_display(char* map)
     display_map(map);
 
     // advance client status iff game not yet started
-    if (client.state != CLIENT_PLAY) {
-        client.state = CLIENT_PLAY;
+    if (client.state != PLAY) {
+        client.state = PLAY;
     }
 }
 
@@ -217,7 +324,7 @@ void
 handle_quit(char* explanation) 
 {
     end_curses();
-    printf("QUIT %s\n", explanation);
+    printf("%s\n", explanation);
     fflush(stdout);
     exit(EXIT_SUCCESS);
 }
@@ -244,20 +351,20 @@ parseGoldCounts(char* counts, int* collected, int* current, int* remaining)
     }
     
     // errors if the collected gold count received is unrealistic 
-    if (!validate_gold_count(*collected, MAXIMUM_GOLD)) {
-        fprintf(stderr, "Invalid 'collected' gold count %d\n", *collected);
+    if (!validate_gold_count(*collected, client.maximumGold)) {
+        fprintf(stderr, "Invalid 'collected' gold count\n");
         errors++;
     }
 
     // errors if the current gold count received is unrealistic  
-    if (!validate_gold_count(*current, MAXIMUM_GOLD)) {
-        fprintf(stderr, "Invalid 'current' gold count %d\n", *current);
+    if (!validate_gold_count(*current, client.maximumGold)) {
+        fprintf(stderr, "Invalid 'current' gold count\n");
         errors++;
     }
 
     // errors if the remaining gold count received is unrealistic 
-    if (!validate_gold_count(*remaining, MAXIMUM_GOLD)) {
-        fprintf(stderr, "Invalid 'remaining' gold count %d\n", *remaining);
+    if (!validate_gold_count(*remaining, client.maximumGold)) {
+        fprintf(stderr, "Invalid 'remaining' gold count\n");
         errors++;
     }
 

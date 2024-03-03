@@ -20,7 +20,7 @@
 bool 
 validate_gold_count(const int count, const int maximum) 
 {
-    return count > 0 && count <= maximum;
+    return count >= 0 && count <= maximum;
 }
 
 /*
@@ -30,4 +30,13 @@ bool
 validate_player_symbol(const char symbol)
 {
     return symbol >= 'A' && symbol <= 'Z';
+}
+
+/*
+ * Ensure input character is not stdin end of file (EOF)
+ */
+bool
+validate_stdin_character(const char stdinCharacter)
+{
+    return stdinCharacter != EOF;
 }
