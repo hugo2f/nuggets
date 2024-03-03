@@ -337,15 +337,17 @@ The `gamemap` module provides the data structure to store all map information. T
 ### Functional decomposition
 
 We anticipate the following functions:
-1. `loadMapFile`, which reads a map file and stores it in a `grid`
-2. `deleteGameMap`, which frees all memory allocated for a GameMap
+1. `loadMapFile`, which reads a map file and stores it in a `GameMap_t` struct
+2. `deleteGameMap`, which frees all memory allocated for a `GameMap_t`
 3. `deleteGrid`, which frees all memory allocated for a 2D `char` array
 4. `getCellType`, which returns the type of cell corresponding to a coordinate in the map
-5. `getPlayerMap`, which returns the map that is visible to a player, including visible players and gold piles
+5. `setCellType`, which updates a cell in the `gameGrid`
 6. `getVisibleRegion`, which returns an array of the cells currently visible to a player
-7. `getSpectatorMap`, which returns the map that a spectator sees, with all player and gold information
+7. `getRoomCells`, which returns an array of room cells in the map for spawning gold piles
 
 ### Pseudocode for logic/algorithmic flow
+
+Pseudocode for getters and setters are omitted, as they all follow the same format: verify parameters - get/set variables - return.
 
 #### loadMapFile
 ```
@@ -358,41 +360,15 @@ return the map
 ```
 
 #### deleteGameMap/deleteGrid
-Frees related memory for data structures used in the `gamemap` module. See the [implementation spec](./IMPLEMENTATION.md) for details.
-
-#### getCellType
-```
-return the character stored in the map at a coordinate
-```
-
-#### getPlayerMap
-```
-initialize a copy of the player's visibleMap to return
-get the cells visible the the player (getVisibleRegion)
-for each cell in the visible region
-    update the player's visibleMap
-    if there is a player or gold in the region
-        update the returned map to show the player/gold
-return the map copy 
-```
+Frees related memory for data structures used in the `gamemap` module. See the [implementation spec](./IMPLEMENTATION.md#deleteGameMap) for details.
 
 #### getVisibleRegion
 ```
-initialize an empty array of cells
-for each cell in the map
-    add the cell into the array if it is visible to the player
+initialize an empty array of coordinates
+while visible cells are found in the previous iteration
+    check an expanding square around the player
+        add visible cells into the array
 return the array
-```
-
-
-#### getSpectatorMap
-```
-copy the grid
-for each player
-    replace the its cell with the player character
-for each remaining gold pile
-    replace its cell with the gold character
-return the new grid
 ```
 
 
@@ -403,14 +379,11 @@ The `grid` will store a 2D array of characters representing the map, including s
 
 The `gameGrid` is a copy of `grid`, but also stores where players and gold piles are. It contains all game information at each point in time, and is what the spectator sees.
 
-#### goldPile
-A `goldPile` stores its location `(row, col)` in the map, and the `amount` of gold in that pile. `amount` is set to `0` if the pile has been taken.
-
 ---
 
 ## Testing Plan
 
-In addition to the testing scenarios below, we will use Valgrind to ensure that there are no memory leaks or errors, except for those caused directly by curses. 
+In addition to the testing scenarios below, we will use Valgrind to ensure that there are no memory leaks or errors, except for those caused directly by ncurses. 
 
 ### client
 1. Run with invalid IP and port and incorrect number of arguments. 
@@ -420,14 +393,13 @@ In addition to the testing scenarios below, we will use Valgrind to ensure that 
 5. Test resizing initially 
 6. Potentially fuzz inputs
 
-
 ### server
 1. Run with invalid ports and incorrect seed values and incorrect number of args 
 2. Try with the miniclient
-4. Send it malformed packets and unexpected messages
-5. Log on too many users
+3. Send it malformed packets and unexpected messages
+4. Log on too many users
 
-### map
+### gamemap
 1. Try to load and output from different map files, and compare the file vs. output
-2. Call getPlayerMap on different combinations of coordinates and maps
-3. Simulate games with different numbers of players, and make sure the spectator sees everything
+2. Simulate games with different numbers of players, and make sure the spectator sees everything
+3. Test with server and client to check that players see the correct visible regions
