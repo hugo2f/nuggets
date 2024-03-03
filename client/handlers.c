@@ -100,7 +100,7 @@ handle_grid(char* coordinates)
 }
 
 /*
- * Runs upon receiving message from server with the STARTING_GOLD_REMAINING header; see .h for more details.
+ * Runs upon receiving message from server with the GOLD_REMAINING header; see .h for more details.
  */
 void
 handle_starting_gold_remaining(char* startingGoldRemainingString)
@@ -138,7 +138,7 @@ handle_starting_gold_remaining(char* startingGoldRemainingString)
     }
     
     // advance client state
-    client.state = STARTING_GOLD_REMAINING_RECEIVED;
+    client.state = GOLD_REMAINING_RECEIVED;
 }
 
 /*
@@ -231,8 +231,8 @@ void
 handle_display(char* map) 
 {
     // ensure that DISPLAY recevied either after GRID received or a during game session
-    if (client.state != STARTING_GOLD_REMAINING_RECEIVED && client.state != PLAY) {
-        fprintf(stderr, "Received DISPLAY prior to receiving STARTING_GOLD_REMAINING\n");
+    if (client.state != GOLD_REMAINING_RECEIVED && client.state != PLAY) {
+        fprintf(stderr, "Received DISPLAY prior to receiving GOLD_REMAINING\n");
         return;
     }
 
@@ -279,19 +279,19 @@ parseGoldCounts(char* counts, int* collected, int* current, int* remaining)
     }
     
     // errors if the collected gold count received is unrealistic 
-    if (!validate_gold_count(*collected, MAXIMUM_GOLD)) {
+    if (!validate_gold_count(*collected, client.maximumGold)) {
         fprintf(stderr, "Invalid 'collected' gold count\n");
         errors++;
     }
 
     // errors if the current gold count received is unrealistic  
-    if (!validate_gold_count(*current, MAXIMUM_GOLD)) {
+    if (!validate_gold_count(*current, client.maximumGold)) {
         fprintf(stderr, "Invalid 'current' gold count\n");
         errors++;
     }
 
     // errors if the remaining gold count received is unrealistic 
-    if (!validate_gold_count(*remaining, MAXIMUM_GOLD)) {
+    if (!validate_gold_count(*remaining, client.maximumGold)) {
         fprintf(stderr, "Invalid 'remaining' gold count\n");
         errors++;
     }

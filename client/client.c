@@ -26,17 +26,17 @@ static bool handleMessage(void* arg, const addr_t from, const char* message);
 static void setPlayerName(const int argc, char* argv[]);
 static int getMapSize(); 
 
-// project-wide global client struct - type defined in clientdata.h 
-ClientData client = {NULL, '\0', 0, 0, 0, 0, PRE_INIT};
+// project-wide global client struct; see .h for more details.
+ClientData client = {NULL, '\0', 0, 0, 0, 0, 0, PRE_INIT};
 
-// global constants
+// global constants; see .h for more details.
 const int MAXIMUM_NAME_LENGTH = 50;
 const int MAXIMUM_GOLD = 1000;
-const int MAXIMUM_MAP_SIZE = 2500; // as area
+const int MAXIMUM_MAP_SIZE = 2500;
 const int FOREGROUND_COLOR = 7;
 const int BACKGROUND_COLOR = 0;
-const char* PLAYER_KEYSTROKES = "qQhHlLjJkKyYuUnNbB"; // all valid keystrokes as player
-const char* SPECTATOR_KEYSTROKES = "qQ"; // all valid keystrokes as spectator
+const char* PLAYER_KEYSTROKES = "qQhHlLjJkKyYuUnNbB";
+const char* SPECTATOR_KEYSTROKES = "qQ";
 
 int 
 main(int argc, char* argv[]) 

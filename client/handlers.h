@@ -1,7 +1,7 @@
 /*
  * handlers.h
  *
- * Description: contains interface for handler functions.
+ * Description: contains interface for the handler module.
  * 
  * Author: Joseph Hirsh
  * Date: March 2st, 2024
