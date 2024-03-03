@@ -73,6 +73,16 @@ void handle_spectator_gold(char* collectionData);
 void handle_display(char* map); 
 
 /*
+ * Handles messages of the form "STOLEN [stealerPlayerID] [stolenPlayerID] [amount]"
+ *
+ * Runs in PLAY state. 
+ * 
+ * Handler displays banner according to if you stole from them, they stole from you, or you are a 
+ * spectator.
+ */
+void handle_stolen(char* stealData);
+
+/*
  * Handles messages of the form "QUIT [explanation]"
  *
  * Runs in any state. 

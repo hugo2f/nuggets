@@ -162,7 +162,7 @@ void
 indicate_nuggets_collected_player(const int collected) 
 {
     // create you collected nuggets indicator message
-    char message[45];
+    char message[50];
     snprintf(message, sizeof(message), "You collected %d nuggets!", collected);
 
     // display it on first line after the basic banner
@@ -177,8 +177,54 @@ void
 indicate_nuggets_collected_spectator(const char symbol, const int collected)
 {
     // create someone else collected nuggets indicator message
-    char message[45];
+    char message[50];
     snprintf(message, sizeof(message), "Player %c collected %d nuggets!", symbol, collected);
+
+    // display it on first line after the basic banner
+    remove_indicator();  // clears any current indicator messages
+    appendToBanner(message);
+}
+
+/*
+ * Displays message after basic banner indicating you stole nuggets from someone; see .h for more details. 
+ */
+void 
+indicate_you_stole_nuggets_from_someone(const char stolenPlayerSymbol, const int amount)
+{
+    // create you stole nuggets from someone indicator message
+    char message[50];
+    snprintf(message, sizeof(message), "You stole %d nuggets from player %c!", amount, stolenPlayerSymbol);
+
+    // display it on first line after the basic banner
+    remove_indicator();  // clears any current indicator messages
+    appendToBanner(message);
+
+}
+
+/*
+ * Displays message after basic banner indicating someone stole nuggets from you; see .h for more details. 
+ */
+void 
+indicate_someone_stole_nuggets_from_you(const char stealerPlayerSymbol, const int amount)
+{
+    // create someone stole nuggets from you indicator message
+    char message[50];
+    snprintf(message, sizeof(message), "Player %c stole %d nuggets from you!", stealerPlayerSymbol, amount);
+
+    // display it on first line after the basic banner
+    remove_indicator();  // clears any current indicator messages
+    appendToBanner(message);
+}
+
+/*
+ * Displays message after basic banner indicating someone stole nuggets from someone else; see .h for more details. 
+ */
+void 
+indicate_nuggets_stolen_spectator(const char stolenPlayerSymbol, const char stealerPlayerSymbol, const int amount)
+{
+    // create someone stole nuggets from someone else indicator message
+    char message[50];
+    snprintf(message, sizeof(message), "Player %c stole %d nuggets from player %c!", stealerPlayerSymbol, amount, stolenPlayerSymbol);
 
     // display it on first line after the basic banner
     remove_indicator();  // clears any current indicator messages

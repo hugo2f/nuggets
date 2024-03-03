@@ -208,6 +208,8 @@ handleMessage(void* arg, const addr_t from, const char* message)
         handle_display(map);  
     } else if (strcmp(messageHeader, "GOLD_REMAINING") == 0) {
         handle_starting_gold_remaining(remainder);
+    } else if (strcmp(messageHeader, "STOLEN") == 0) {
+        handle_stolen(remainder);
     } else {
         fprintf(stderr, "%s is an invalid message header\n", messageHeader); // bad message header
     }

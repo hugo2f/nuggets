@@ -20,7 +20,7 @@
 bool 
 validate_gold_count(const int count, const int maximum) 
 {
-    return count > 0 && count <= maximum;
+    return count >= 0 && count <= maximum;
 }
 
 /*

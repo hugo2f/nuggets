@@ -82,6 +82,39 @@ void indicate_nuggets_collected_player(const int collected);
 void indicate_nuggets_collected_spectator(const char symbol, const int collected);
 
 /*
+ * Displays mesage at banner end indicating that a client player stole nuggets from another player.
+ *
+ * Requires stolenPlayerSymbol and stolenAmount, the symbol of the player that client player stole from and the
+ * amount. 
+ * 
+ * This function displays an indicator of the following form "You stole [amount] nuggets from player 
+ * [stolenPlayerSymbol]" 
+ */
+void indicate_you_stole_nuggets_from_someone(const char stolenPlayerSymbol, const int stolenAmount);
+
+/*
+ * Displays mesage at banner end indicating that someone stole from client player.
+ *
+ * Requires stealerPlayerSymbol and stolenAmount, the symbol of the player stole from client player and the
+ * amount. 
+ * 
+ * This function displays an indicator of the following form "Player [stealerPlayerSymbol] stole [stolenAmount]
+ * nuggets from you!" 
+ */
+void indicate_someone_stole_nuggets_from_you(const char stealerPlayerSymbol, const int stolenAmount);
+
+/*
+ * Displays mesage at banner end indicating that someone stole from someone else.
+ *
+ * Requires stolenPlayerSymbol, stealerPlayerSymbol, and stolenAmount, the symbol of the player who was stolen from
+ * the synbol of the player who stole, and the ammount stolen. 
+ * 
+ * This function displays an indicator of the following form "Player [stealerPlayerSymbol] stole [stolenAmount] 
+ * nuggets from player [stolenPlayerSymbol]!" 
+ */
+void indicate_nuggets_stolen_spectator(const char stolenPlayerSymbol, const char stealerPlayerSymbol, const int stolenAmount);
+
+/*
  * Removes indicator message.
  *
  * This function uses a helper function to move the cursor to the period at the end of the base banner.

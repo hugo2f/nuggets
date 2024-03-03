@@ -173,10 +173,15 @@ handle_player_gold(char* counts)
     // update banner with gold statistics
     display_player_banner(client.playerSymbol, current, remaining);
     
-    // show message indicating that player collected nuggets
-    indicate_nuggets_collected_player(collected);
+    // show message indicating that player collected nuggets if collected is not zero
+    if (collected != 0) {
+        indicate_nuggets_collected_player(collected);
+    }
 }
 
+/*
+ * Runs upon receiving message from server with the SPECTATOR_GOLD header; see .h for more details.
+ */
 void
 handle_spectator_gold(char* collectionData)
 {
@@ -184,7 +189,7 @@ handle_spectator_gold(char* collectionData)
 
     // ensure that client is currently running a game session (not initializing)
     if (client.state != PLAY) {
-        fprintf(stderr, "Received SPECTATOR_GOLD prior to game start\n");
+        fprintf(stderr, "Received SPECTATOR_GOLD prior to PLAY\n");
         errors++;
     }
 
@@ -222,6 +227,73 @@ handle_spectator_gold(char* collectionData)
     
     // show message indicating that player collected nuggets
     indicate_nuggets_collected_spectator(collectorSymbol, collected);
+}
+/*
+ * Runs upon receiving message from server with the STOLEN header; see .h for more details.
+ */
+void 
+handle_stolen(char* stealData)
+{
+    int errors = 0; // stores number of errors so function can accumulate multiple errors before exiting
+
+    // ensure that client is currently running a game session (not initializing)
+    if (client.state != PLAY) {
+        fprintf(stderr, "Received STOLEN prior to PLAY\n");
+        errors++;
+    }
+    
+    // extract stolenPlayerSymbol, stealerPlayerSymbol, and amountStolen from stealData
+    char stolenPlayerSymbol, stealerPlayerSymbol;
+    int amountStolen;
+    if (sscanf(stealData, " %c %c %d", &stolenPlayerSymbol, &stealerPlayerSymbol, &amountStolen) != 3) {
+        fprintf(stderr, "STOLEN message bad data\n");
+        return;
+    }
+
+    // ensure amountStolen is valid
+    if (!validate_gold_count(amountStolen, client.maximumGold)) {
+        fprintf(stderr, "Invalid 'amountStolen' gold count\n");
+        errors++;
+    }
+
+    // ensure stolenPlayerSymbol is valid
+    if (!validate_player_symbol(stolenPlayerSymbol)) {
+        fprintf(stderr, "Invalid 'stolenPlayerSymbol' (the player stolen from)\n");
+        errors++;
+    }
+
+    // ensure stealerPlayerSymbol is valid
+    if (!validate_player_symbol(stealerPlayerSymbol)) {
+        fprintf(stderr, "Invalid 'stealerPlayerSymbol' (the player who stole)\n");
+        errors++;
+    }
+    
+    // ensure stolenPlayerSymbol and stealerPlayerSymbol are not the same player
+    if (stolenPlayerSymbol == stealerPlayerSymbol) {
+        fprintf(stderr, "Someone cannot steal from themselves\n");
+        errors++;
+    }
+
+    // cease execution if error occurred
+    if (errors > 0) {
+        return;
+    }
+
+    // display different indication message according to if...
+    if (client.playerName != NULL) {
+        // someone stole from you or
+        if (client.playerSymbol == stolenPlayerSymbol) {
+            indicate_someone_stole_nuggets_from_you(stealerPlayerSymbol, amountStolen);
+        } 
+        // you stole from someone else or
+        else if (client.playerSymbol == stealerPlayerSymbol) {
+            indicate_you_stole_nuggets_from_someone(stolenPlayerSymbol, amountStolen);
+        }
+    } 
+    // you are a spectator
+    else {
+        indicate_nuggets_stolen_spectator(stolenPlayerSymbol, stealerPlayerSymbol, amountStolen);
+    }
 }
 
 /*
