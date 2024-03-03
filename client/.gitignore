@@ -1,7 +1,10 @@
+# executables
 client
 graphics
 handlers
 senders
 indicators
 validators
+
+# vscode settings file
 .vscode/settings.json
