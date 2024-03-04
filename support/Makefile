@@ -12,6 +12,8 @@ CFLAGS = -Wall -pedantic -std=c11 -ggdb
 CC = gcc
 MAKE = make
 
+VALGRIND = valgrind --leak-check=full --show-leak-kinds=all
+
 .PHONY: all clean
 
 ############# default rule ###########
@@ -28,6 +30,9 @@ miniclient: miniclient.o message.o log.o
 
 miniserver: miniserver.o message.o log.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
+
+valgrind: miniserver
+	$(VALGRIND) ./miniserver
 
 miniclient.o: message.h
 miniserver.o: message.h

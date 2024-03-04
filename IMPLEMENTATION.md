@@ -542,6 +542,30 @@ void playerQuit(player_t* player);
 void spectatorQuit(player_t* spectator);
 void sendGameSummary();
 void cleanUpGame();
+
+void initializeGame();
+static bool handleMessage(void* arg, const addr_t from, const char* message);
+void updateSpectatorDisplay();
+void removeSpectator();
+bool spectatorActive();
+void distributeGold();
+void sendStartingGold(player_t* player);
+void collectGold(player_t* player);
+void sendGoldUpdate(player_t* player, int pileAmount);
+void spawnGold(int rol, int col);
+void spawnPlayer(player_t* player, int row, int col);
+void callCommand(player_t* player, char key);
+void sendGrid(player_t* player, bool isSpectator);
+void sendDisplay(player_t* player, bool isSpectator);
+char** initializePlayerMap(int row, int col);
+void updateCurrentPlayerVision();
+player_t* spectatorJoin(addr_t address, char* name);
+player_t* playerJoin(addr_t address, char* name);
+player_t* checkPlayerJoined(addr_t address);
+void playerQuit(player_t* player);
+void spectatorQuit(player_t* spectator);
+void sendGameSummary();
+void cleanUpGame();
 ```
 
 ### Detailed pseudo code
@@ -1359,6 +1383,14 @@ static void unitTest();
         return true
     else:
         return false
+
+
+## Testing plan
+
+- We will test the server as a systems test. We can utilize the miniclient initially to test sending and receiving messages.
+- When the actual client is up and running, we will use that client. 
+- Use print statements in server to check whether or not the message the client receives is the same
+
 
 ### Unit testing
 
