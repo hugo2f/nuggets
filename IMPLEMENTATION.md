@@ -1374,17 +1374,6 @@ The cases we tested included the following among others:
 5. messages with too much data
 6. messages with missing dilineators
 
-#### Client Manual System (against miniserver)
-
-We tested ALL the client functionality against the miniserver, including sending, graphics, receiving, and validating data. To test with the miniserver, we needed to call a sendReceipt function between receiving the next initialization command. We do not compile this in the release executable either, again by setting a preprocessor directive for testing mode. 
-
-The cases we tested included the following among others:
-1. everything in the list above under (unit testing)
-3. DISPLAY commands with maps that are way too large
-4. checking that the graphics module responds appropriately when the terminal size is too large for the grid 
-5. High volumes of nonsense data
-
-^^^ We did many if not all of these tests under Valgrind as well ^^^
 
 #### gamemap
 1. Try to load nonexistent map files
@@ -1397,15 +1386,28 @@ The cases we tested included the following among others:
 
 ### Integration testing
 
-> How will you test the complete main programs: the server, and for teams of 4, the client?
+#### Client Manual Integration Testing (against miniserver)
+
+We tested ALL the client functionality against the miniserver, including sending, graphics, receiving, and validating data. To test with the miniserver, we needed to call a sendReceipt function between receiving the next initialization command. We do not compile this in the release executable either, again by setting a preprocessor directive for testing mode. 
+
+The cases we tested included the following among others:
+1. everything in the list above under (unit testing)
+3. DISPLAY commands with maps that are way too large
+4. checking that the graphics module responds appropriately when the terminal size is too large for the grid 
+5. High volumes of nonsense data
+
+^^^ We did many if not all of these tests under Valgrind as well ^^^
 
 ### System testing
 
-> For teams of 4: How will you test your client and server together?
+We run the server and then connect all of our computers to the server. We test with multiple wondows via localhost, as well as with multiple computers via the Darmtouth network. We play the game not just to win, but
+also to test possible interactions and edge cases that we think might break our code.  
 
 ---
 
 ## Limitations
 
-> Bulleted list of any limitations of your implementation.
-> This section may not be relevant when you first write your Implementation Plan, but could be relevant after completing the implementation.
+1. Constrained to 26 players (allowed by `REQUIREMENTS.md`)
+2. Players cannot quit and rejoin (allowed by `REQUIREMENTS.md`)
+3. One spectator at a time (allowed by `REQUIREMENTS.md`)
+4. Some constant buffer sizes and associated memory protection theoretically truncate the values that the client can receive such that the client behavior might not align with the server's expectations of it, but these buffers are so big that this should never be a problem unless the server is greatly malfunctioning. 
