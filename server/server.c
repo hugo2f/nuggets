@@ -78,7 +78,10 @@ main(int argc, char* argv[])
   } else if (argc == 3) { // argv[2] is the seed
     mapFile = argv[1];
     int randSeed;
-    sscanf(argv[2], "%d", &randSeed);
+    char extra;
+    if (sscanf(argv[2], "%d%c", &randSeed, &extra) != 1) {
+      return 3; //bad commandline
+    }
     srand(randSeed);
   } else {
     fprintf(stderr, "usage: %s mapFile [seed]\n", program);
