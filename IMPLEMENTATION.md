@@ -850,7 +850,7 @@ void cleanUpGame();
     free the map
     free the game
     
-## Client Module
+## Client
 
 ### Data structures
 > There is one ClientData client initialized
@@ -862,6 +862,7 @@ static bool respondToInput(void* server);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 static void setPlayerName(char* name);
 static int getMapSize(); 
+static void unitTest();
 ```
 
 ### Detailed pseudo code
@@ -880,6 +881,7 @@ static int getMapSize();
         print error and exit 5
     if argc is 4:
         set player name to argv[3]
+    run unit tests (this does not do anything except in the test builds)
     start server
 
 #### respondToInput
@@ -924,20 +926,420 @@ static int getMapSize();
 
 
 #### setPlayerName
-    if playerName is not null
-        print to stderr and return
-    if strlen(name) > MAXIMUM_NAME_LENGTH:
-        stop at buffer
-    set playerName to name
+    if client.playerName is not NULL:
+        Print "You cannot reset player name" to stderr
+        Return
+
+    create a character array named name with size MAXIMUM_NAME_LENGTH
+    set name[0] to '\0' to ensure that the buffer is empty
+    set currentNameSize to 0
+
+    for each argument in argv starting from index 3:
+        set argument to the current argument
+        set argumentLength to the length of argument
+
+        if (currentNameSize + argumentLength + 1) is less than MAXIMUM_NAME_LENGTH:
+            concatenate argument and a space to name using strncat, ensuring not to exceed MAXIMUM_NAME_LENGTH
+            update currentNameSize accordingly
+        else:
+            concatenate as much of the argument as possible to name without exceeding MAXIMUM_NAME_LENGTH
+            break the loop
+
+    set client.playerName to name
 
 #### getMapSize
-    return the mapsize 
+    set mapsize to rows times columns
+    if mapsize is still zero set it to MAXIMUM_MAP_SIZe
+    return mapsize
+
+#### unitTest
+    if UNIT_TEST is defined (via preprocessor directives):
+        print "Running test build" to stderr
+
+        open "testcommands.txt" file for reading as testCommandsFile
+        if testCommandsFile is not opened successfully:
+            print "Error opening testcommands.txt file, continuing to normal execution" to stderr
+            return
+
+        while there are lines in testCommandsFile:
+            read a line from testCommandsFile into command
+            print "\nSERVER COMMAND\n" + command + "\nCLIENT OUTPUT" to stdout
+            handle message with parameters (NULL, from, command)
+            print "\n" to stdout
+
+        close testCommandsFile
+        print "TESTING COMPLETE" to stdout
+        exit with status 0
+
+    else:
+        print "Running release build" to stderr
+
+## Handlers Module
+
+#### handle_okay
+    initialize errors to 0
+
+    if client.state is not START_SENT:
+        print "Received OK again or prior to sending START" to stderr
+        increment errors by 1
+
+    if length of symbol is greater than 1:
+        print "Received player symbol with multiple characters, attempting to use first" to stderr
+
+    set symbolCharacter to the first character of symbol
+
+    if symbolCharacter is not a valid alphabetic and capitalized symbol:
+        print "Received invalid player symbol" to stderr
+        increment errors by 1
+
+    if errors is not equal to 0:
+        return
+
+    set client.playerSymbol to symbolCharacter
+    set client.state to OK_RECEIVED
+
+#### handle_grid
+    initialize errors to 0
+
+    if client.state is not OK_RECEIVED:
+        print "Received GRID prior to receiving OK or for a second time" to stderr
+        increment errors by 1
+
+    initialize nrows and ncols variables
+
+    extract integer values from the coordinates string into nrows and ncols
+    if the number of successfully extracted values is not 2:
+        print "GRID message bad data" to stderr
+        increment errors by 1
+
+    if errors is not equal to 0:
+        return
+
+    initialize curses
+    set client.nrowsMap to nrows
+    set client.ncolsMap to ncols
+    set client.state to GRID_RECEIVED
+
+#### handle_gold_remaining
+
+    initialize errors to 0
+
+    if client.state is not GRID_RECEIVED:
+        print "Received GOLD_REMAINING prior to GRID or for a second time" to stderr
+        increment errors by 1
+
+    initialize startingGoldRemaining variable
+
+    extract an integer value from startingGoldRemainingString into startingGoldRemaining
+    if the number of successfully extracted values is not 1:
+        print "GOLD_REMAINING message bad data" to stderr
+        increment errors by 1
+
+    if startingGoldRemaining is not a valid gold count:
+        print "Invalid 'startingGoldRemaining' gold count" to stderr
+        increment errors by 1
+
+    if errors is greater than 0:
+        return
+
+    if client.playerName is not NULL:
+        display player banner with parameters (client.playerSymbol, 0, startingGoldRemaining)
+    else:
+        display spectator banner with parameter (startingGoldRemaining)
+
+    set client.state to GOLD_REMAINING_RECEIVED
+
+#### handle_player_gold
+
+    initialize errors to 0
+
+    if client.state is not PLAY:
+        print "Received GOLD prior to game start" to stderr
+        increment errors by 1
+
+    if client.playerName is NULL:
+        print "Received GOLD as Spectator" to stderr
+        increment errors by 1
+
+    initialize collected, current, and remaining variables
+
+    parse gold counts from counts string into collected, current, and remaining
+    add the number of errors returned by parseGoldCounts to errors
+
+    if errors is greater than 0:
+        return
+
+    update player banner with parameters (client.playerSymbol, current, remaining)
+
+    if collected is not equal to 0:
+        indicate nuggets collected player with parameter (collected)
+
+#### handle_spectator_gold
+    initialize errors to 0
+
+    if client.state is not PLAY:
+        print "Received SPECTATOR_GOLD prior to PLAY" to stderr
+        increment errors by 1
+
+    if client.playerName is not NULL:
+        print "Received SPECTATOR_GOLD as Player" to stderr
+        increment errors by 1
+
+    initialize counts, collectorSymbol variables
+
+    extract symbol and gold data from collectionData string into collectorSymbol and counts
+    if the number of successfully extracted values is not 2:
+        print "SPECTATOR_GOLD message bad data" to stderr
+      return
+
+    if collectorSymbol is not a valid alphabetic and capitalized symbol:
+        print "SPECTATOR_GOLD message contains invalid player symbol" to stderr
+        increment errors by 1
+
+    initialize collected, current, and remaining variables
+
+    parse gold counts from counts string into collected, current, and remaining
+    add the number of errors returned by parseGoldCounts to errors
+
+    if errors is greater than 0:
+        return
+
+    update spectator banner with parameter (remaining)
+
+    indicate nuggets collected spectator with parameters (collectorSymbol, collected)
+
+#### handle_stolen
+    initialize errors to 0
+
+    if client.state is not PLAY:
+        print "Received STOLEN prior to PLAY" to stderr
+        increment errors by 1
+
+    initialize stolenPlayerSymbol, stealerPlayerSymbol, and amountStolen variables
+
+    extract stolenPlayerSymbol, stealerPlayerSymbol, and amountStolen from stealData
+    if the number of successfully extracted values is not 3:
+        print "STOLEN message bad data" to stderr
+        return
+
+    if amountStolen is not a valid gold count:
+        print "Invalid 'amountStolen' gold count" to stderr
+        increment errors by 1
+
+    if stolenPlayerSymbol is not a valid alphabetic and capitalized symbol:
+        print "Invalid 'stolenPlayerSymbol' (the player stolen from)" to stderr
+        increment errors by 1
+
+    if stealerPlayerSymbol is not a valid alphabetic and capitalized symbol:
+        print "Invalid 'stealerPlayerSymbol' (the player who stole)" to stderr
+        increment errors by 1
+
+    if stolenPlayerSymbol is the same as stealerPlayerSymbol:
+        print "Someone cannot steal from themselves" to stderr
+        increment errors by 1
+
+    if errors is greater than 0:
+        return
+
+    if client.playerName is not NULL:
+        if client.playerSymbol is equal to stolenPlayerSymbol:
+            indicate someone stole nuggets from you with parameters (stealerPlayerSymbol, amountStolen)
+        else if client.playerSymbol is equal to stealerPlayerSymbol:
+            indicate you stole nuggets from someone with parameters (stolenPlayerSymbol, amountStolen)
+    else:
+      indicate nuggets stolen spectator with parameters (stolenPlayerSymbol, stealerPlayerSymbol, amountStolen)
+
+#### handle_display
+    if client.state is not GOLD_REMAINING_RECEIVED and client.state is not PLAY:
+        print "Received DISPLAY prior to receiving GOLD_REMAINING" to stderr
+        return
+
+    display map using function display_map with parameter map
+
+    if client.state is not PLAY:
+        set client.state to PLAY
+
+#### handle_quit
+    end curses
+    print quit explanation
+    flush stdout
+    exit program
+
+#### handle_error
+    print error message parameter
+
+#### parseGoldCounts
+    initialize errors to 0
+
+    extract collected, current, and remaining from counts into collected, current, and remaining parameters
+    if the number of successfully extracted values is not 3:
+        print "Gold data missing" to stderr
+        increment errors by 1
+        return errors
+
+    if collected is not a valid gold count:
+        print "Invalid 'collected' gold count" to stderr
+        increment errors by 1
+
+    if current is not a valid gold count:
+        print "Invalid 'current' gold count" to stderr
+        increment errors by 1
+
+    if remaining is not a valid gold count:
+        print "Invalid 'remaining' gold count" to stderr
+        increment errors by 1
+
+    return errors
+
+## Senders Module
+
+#### send_receipt:
+    if client.state is not PLAY and client.state is not PRE_INIT:
+        send "RECEIVED" message to server using message_send
+
+#### send_start:
+    if client.state is not PRE_INIT:
+        print "Sent START again" to stderr
+        return
+
+    if client.playerName is NULL:
+        sendSpectate(serverp)
+    else:
+        sendPlay(serverp)
+
+    set client.state to START_SENT
+
+#### send_key:
+    if client.state is not PLAY:
+        return
+
+    create message using key
+    send message to server using message_send
+
+#### sendPlay:
+    create message containing "PLAY" followed by client.playerName
+    send message to server using message_send
+
+#### sendSpectate:
+    send "SPECTATE" message to server using message_send
+
+## Graphics Module
+
+#### init_curses:
+    if window size is smaller than required:
+        prompt user to expand window
+    while window size is still smaller than required:
+        continue prompting user to expand window
+    initialize curses library
+    set input mode to read one character at a time
+    disable automatic echoing of characters typed by the user
+    enable non-blocking input mode
+    enable interpretation of special keys
+    flush any pending input
+    start color mode
+    initialize color pair one with specified foreground and background colors
+
+#### display_map:
+    set initial cursor position
+    iterate over characters in the map:
+        if end of row is reached:
+            move to the next row
+        if end of available board space is reached:
+            break
+        print character at current position
+        move to the next position
+    update display
+
+#### display_player_banner:
+    if playerSymbol is not null:
+        clear current line
+        create banner string with player information
+        print banner string at top left corner
+        update display
+
+#### function display_spectator_banner:
+    clear current line
+    print spectator banner with unclaimed nuggets information at top left corner
+    update display
+
+#### indicate_invalid_key:
+    create message indicating invalid key press
+    remove any existing indicator messages
+    append message to banner
+    update display
+
+#### indicate_nuggets_collected_player:
+    create message indicating collected nuggets
+    remove any existing indicator messages
+    append message to banner
+    update display
+
+#### indicate_nuggets_collected_spectator:
+    create message indicating someone else collected nuggets
+    remove any existing indicator messages
+    append message to banner
+    update display
+
+#### indicate_you_stole_nuggets_from_someone:
+    create message indicating you stole nuggets
+    remove any existing indicator messages
+    append message to banner
+    update display
+
+#### indicate_someone_stole_nuggets_from_you:
+    create message indicating someone stole nuggets from you
+    remove any existing indicator messages
+    append message to banner
+    update display
+
+#### indicate_nuggets_stolen_spectator:
+    create message indicating someone stole nuggets from someone else
+    remove any existing indicator messages
+    append message to banner
+    update display
+
+#### remove_indicator:
+    move cursor to end of banner
+    delete all characters until end of screen
+    update display
+
+#### get_character:
+    return character from keyboard input
+
+#### end_curses:
+    end curses library
+
+## Validators Module
+
+#### validate_gold_count
+    if count is greater than or equal to zero and count is less than or equal to maximum:
+        return true
+    else:
+        return false
+
+#### validate_player_symbol
+    if symbol is between 'A' and 'Z' inclusive:
+        return true
+    else:
+        return false
+
+#### validate_stdin_character
+    if stdinCharacter is not equal to EOF:
+        return true
+    else:
+        return false
 
 ## Testing plan
 
 ### Unit testing
 
-> How will you test each unit (module) before integrating them with a main program (client or server)?
+#### Client Unit Testing
+
+The Client's main operations are tested via the unitTest function in the Client driver. The tester can compile the Client in unit test mode. This essentially creates a client.c test executable as opposed to a client.c release-ready playable executable. The unitTest function reads a long list of malformed messages into the handleMessage function, which either errors or delegates responsiblity for responding to the various handlers. The unitTest function prints each malformed command with the logged error message next to it. Therefore, we are able to test if the client is robust with respect to the various ways in which the server may send it invalid data. We decided to use preporcessor definitions in the client.c program, instead of creating an individual  test program, to control for the way in which the client sets up the global variables and parses the arguments. Otherwise, we would need to redundantly replicate all this code in the individual test file. 
+
+#### Client Manual System (against miniserver)
+
+We tested ALL the client functionality against the miniserver, including sending, graphics, receiving, and validating data. To test with the miniserver, we needed to call a sendReceipt function between receiving the next initialization command. We do not compile this in the release executable either, again by setting a preprocessor directive for testing mode. 
 
 #### gamemap
 1. Try to load nonexistent map files

@@ -21,7 +21,7 @@ LIBS = -lm -lcurses
 MINISERVER_TEST=-DMINISERVER_TEST
 
 # flag for running unit tests (comment out for final build)
-UNIT_TEST=-DUNIT_TEST
+#UNIT_TEST=-DUNIT_TEST
 
 # compilation flags (used by default)
 CFLAGS = -Wall -pedantic -std=c11 -ggdb $(MINISERVER_TEST) $(UNIT_TEST) -I$(S) $(FLAGS)

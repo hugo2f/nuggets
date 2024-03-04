@@ -41,7 +41,7 @@ void handle_grid(char* coordinates);
  * Handler prints banner according to gold remaining and advances the client state.
  * 
  */
-void handle_starting_gold_remaining(char* startingGoldRemainingString);
+void handle_gold_remaining(char* startingGoldRemainingString);
 
 /*
  * Handles messages of the form "GOLD [collected] [current] [remaining]"
