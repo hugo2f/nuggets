@@ -8,6 +8,7 @@ all:
 	make -C support
 	make -C gamemap
 	make -C client
+	make -C server/player
 	make -C server
 
 clean:
@@ -16,3 +17,4 @@ clean:
 	make -C gamemap clean
 	make -C client clean
 	make -C server clean
+	make -C server/player clean
