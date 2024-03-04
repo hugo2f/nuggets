@@ -1,3 +1,10 @@
+/*
+ * Player module
+ * Handles all player related functions (movement, vision, etc)
+ * 
+ * Author: Jaysen Quan and Colin Wolfe, Dartmouth CS 50, Winter 2024
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <strings.h>

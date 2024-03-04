@@ -15,10 +15,10 @@
 #include "../gamemap/gamemap.h"
 #include "player/player.h"
 
-static const int MaxPlayers = 27;      // maximum number of players
+static const int MaxPlayers = 27;      // maximum number of players (includes spectator)
 static const int GoldTotal = 250;      // amount of gold in the game
-static const int GoldMinNumPiles = 3; // minimum number of gold piles
-static const int GoldMaxNumPiles = 5; // maximum number of gold piles
+static const int GoldMinNumPiles = 10; // minimum number of gold piles
+static const int GoldMaxNumPiles = 30; // maximum number of gold piles
 
 /****************** local types *********************/
 typedef struct goldPile {
@@ -106,7 +106,7 @@ initializeGame()
     fprintf(stderr, "Error allocating memory for game\n");
     return;
   }
-  game->map = loadMapFile("../maps/fewspots.txt");
+  game->map = loadMapFile("../maps/main.txt");
   if (game->map == NULL) {
     fprintf(stderr, "Error loading map\n");
     return;
