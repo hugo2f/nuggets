@@ -11,49 +11,10 @@ We avoid repeating information that is provided in the requirements spec.
 ## Plan for division of labor
 
 * Joe - Client
-* Hugo - Game Map
+* Hugo - GameMap
 * Jaysen & Colin - Server & Player
 
-
-### Data structures
-
-> For each new data structure, describe it briefly and provide a code block listing the `struct` definition(s).
-> No need to provide `struct` for existing CS50 data structures like `hashtable`.
-
-### Definition of function prototypes
-
-> For function, provide a brief description and then a code block with its function prototype.
-> For example:
-
-A function to parse the command-line arguments, initialize the game struct, initialize the message module, and (BEYOND SPEC) initialize analytics module.
-
-```c
-static int parseArgs(const int argc, char* argv[]);
-```
-### Detailed pseudo code
-
-> For each function write pseudocode indented by a tab, which in Markdown will cause it to be rendered in literal form (like a code block).
-> Much easier than writing as a bulleted list!
-> For example:
-
-#### `parseArgs`:
-```
-validate commandline
-initialize message module
-print assigned port number
-decide whether spectator or player
-```
 ---
-
-## XYZ module
-
-> For each module, repeat the same framework above.
-
-### Data structures
-
-### Definition of function prototypes
-
-### Detailed pseudo code
 
 ## gamemap module
 
@@ -235,7 +196,8 @@ res[totalLength - 1] = '\0' // last row ended by '\0' instead of '\n'
 
 ### Definition of function prototypes
 ```c
-player_t* player_new(char ID, GameMap_t* map, char** grid, int gold, char* name, int row, int col, addr_t address);
+player_t* player_new(char ID, GameMap_t* map, char** grid, int gold,
+                     char* name, int row, int col, addr_t playerAddress);
 void player_delete(player_t* player);
 player_t* getPlayerByID(player_t** players, char ID);
 char* getPlayerName(player_t* player);
@@ -560,18 +522,25 @@ int moveRight(player_t* player, player_t** players, int goldRemaining);
 void initializeGame();
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 void updateSpectatorDisplay();
+void removeSpectator();
 bool spectatorActive();
 void distributeGold();
+void sendStartingGold(player_t* player);
 void collectGold(player_t* player);
+void sendGoldUpdate(player_t* player, int pileAmount);
 void spawnGold(int rol, int col);
 void spawnPlayer(player_t* player, int row, int col);
 void callCommand(player_t* player, char key);
 void sendGrid(player_t* player, bool isSpectator);
 void sendDisplay(player_t* player, bool isSpectator);
 char** initializePlayerMap(int row, int col);
+void updateCurrentPlayerVision();
 player_t* spectatorJoin(addr_t address, char* name);
 player_t* playerJoin(addr_t address, char* name);
 player_t* checkPlayerJoined(addr_t address);
+void playerQuit(player_t* player);
+void spectatorQuit(player_t* spectator);
+void sendGameSummary();
 void cleanUpGame();
 
 void initializeGame();
@@ -930,6 +899,12 @@ void cleanUpGame();
     free the gameMap
     free the game
     
+## Testing plan
+
+1. We will test the server as a systems test. We can utilize the miniclient initially to test sending and receiving messages.
+2. When the actual client is up and running, we will use that client. 
+3. Use print statements in server to check whether or not the message the client receives is the same
+
 ## Client
 
 ### Data structures
@@ -1409,11 +1384,13 @@ static void unitTest();
     else:
         return false
 
+
 ## Testing plan
 
 - We will test the server as a systems test. We can utilize the miniclient initially to test sending and receiving messages.
 - When the actual client is up and running, we will use that client. 
 - Use print statements in server to check whether or not the message the client receives is the same
+
 
 ### Unit testing
 
