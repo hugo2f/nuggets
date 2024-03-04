@@ -175,11 +175,14 @@ handleMessage(void* arg, const addr_t from, const char* message)
     } else if (strcmp(messageHeader, "GOLD") == 0) {
         handle_player_gold(remainder);
     } else if (strcmp(messageHeader, "QUIT") == 0) {
+        // we handle the quit parsing seperately as the "remaining" equivelent requires much more memory
         char* skip = "QUIT ";
         char* found;
 
+        // if 'skip' is found within 'message'
         found = strstr(message, skip);
         if (found != NULL) {
+            // set 'quit' pointer to the position in 'message' right after the 'skip' substring
             char* quit = found + strlen(skip);
             handle_quit(quit);
         } else {
@@ -190,6 +193,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
     } else if (strcmp(messageHeader, "SPECTATOR_GOLD") == 0) {
         handle_spectator_gold(remainder);
     } else if (strcmp(messageHeader, "DISPLAY") == 0) {
+        // we handle the display parsing seperately as the "remaining" equivelent requires much more memory
         #ifdef MINISERVER_TEST
         int mapsize = getMapSize(); // get map size
 
@@ -211,11 +215,13 @@ handleMessage(void* arg, const addr_t from, const char* message)
 
         handle_display(map);
         #else
-        char* skip = "DISPLAY\n";
+        char* skip = "DISPLAY\n"; // notice that the header here is formatted slightly different
         char* found;
 
+        // if 'skip' is found within 'message'
         found = strstr(message, skip);
         if (found != NULL) {
+            // set 'map' pointer to the position in 'message' right after the 'skip' substring
             char* map = found + strlen(skip);
             handle_display(map);
         } else {
