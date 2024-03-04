@@ -87,8 +87,21 @@ send_key(addr_t* serverp, char key)
 static void 
 sendPlay(addr_t* serverp) 
 {
-    // create play message (the player start message)
-    char message[MAXIMUM_NAME_LENGTH + 5];
+    // check to make sure playerName is not NULL
+    if (client.playerName == NULL) {
+        fprintf(stderr, "Cannot send NULL playerName");
+        return;
+    }
+    
+    // check to make sure playerName is not too large
+    int playerNameLength = strlen(client.playerName);
+    if (playerNameLength > MAXIMUM_NAME_LENGTH) {
+        fprintf(stderr, "Player name '%s' is too long", client.playerName);
+        return;
+    }
+
+    // create PLAY message
+    char message[MAXIMUM_NAME_LENGTH + 10];
     snprintf(message, sizeof(message), "PLAY %s", client.playerName);
     
     // send message to server

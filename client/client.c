@@ -52,6 +52,9 @@ main(int argc, char* argv[])
     // shut down message module
     message_done();
 
+    // free client.playerName which we allocated via the set name function
+    free(client.playerName);
+
     // return error code corresponding to message loop exit status
     return messageLoopExitStatus ? EXIT_SUCCESS : 1;
 }
@@ -94,10 +97,10 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
         setPlayerName(argc, argv);
     }
 
+    unitTest(*serverp);
+    
     // send start message to kick off communication with the server 
     send_start(serverp);
-
-    unitTest(*serverp);
 }
 
 /*
@@ -220,7 +223,7 @@ handleMessage(void* arg, const addr_t from, const char* message)
         }
         #endif
     } else if (strcmp(messageHeader, "GOLD_REMAINING") == 0) {
-        handle_starting_gold_remaining(remainder);
+        handle_gold_remaining(remainder);
     } else if (strcmp(messageHeader, "STOLEN") == 0) {
         handle_stolen(remainder);
     } else {
@@ -231,8 +234,10 @@ handleMessage(void* arg, const addr_t from, const char* message)
     return false; // continue message loop 
 }
 
+#include <stdlib.h> // for malloc and free
+
 /*
- * Sets playerName in clientData structure ensuring corrent length
+ * Sets playerName in clientData structure ensuring correct length
  */
 static void
 setPlayerName(const int argc, char* argv[]) 
@@ -244,7 +249,7 @@ setPlayerName(const int argc, char* argv[])
     }
 
     // create name character array
-    char name[MAXIMUM_NAME_LENGTH];
+    char name[MAXIMUM_NAME_LENGTH + 1];
     
     // ensure that there is nothing in memory name included in array
     name[0] = '\0';
@@ -269,9 +274,20 @@ setPlayerName(const int argc, char* argv[])
         }
     }
 
-    // sets player name
-    client.playerName = name;
+    // null-terminate the string
+    name[MAXIMUM_NAME_LENGTH] = '\0';
+
+    // allocate memory for client.playerName and copy name into it
+    client.playerName = malloc(strlen(name) + 1);
+    if (client.playerName == NULL) {
+        fprintf(stderr, "Memory allocation failed");
+        return;
+    }
+    
+    strcpy(client.playerName, name);
 }
+
+
 
 /*
  * Calculates the map size (area), returns maximum possible map size (for memory safety), if calculation
