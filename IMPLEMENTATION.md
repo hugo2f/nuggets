@@ -14,46 +14,7 @@ We avoid repeating information that is provided in the requirements spec.
 * Hugo - Game Map
 * Jaysen & Colin - Server & Player
 
-
-### Data structures
-
-> For each new data structure, describe it briefly and provide a code block listing the `struct` definition(s).
-> No need to provide `struct` for existing CS50 data structures like `hashtable`.
-
-### Definition of function prototypes
-
-> For function, provide a brief description and then a code block with its function prototype.
-> For example:
-
-A function to parse the command-line arguments, initialize the game struct, initialize the message module, and (BEYOND SPEC) initialize analytics module.
-
-```c
-static int parseArgs(const int argc, char* argv[]);
-```
-### Detailed pseudo code
-
-> For each function write pseudocode indented by a tab, which in Markdown will cause it to be rendered in literal form (like a code block).
-> Much easier than writing as a bulleted list!
-> For example:
-
-#### `parseArgs`:
-```
-validate commandline
-initialize message module
-print assigned port number
-decide whether spectator or player
-```
 ---
-
-## XYZ module
-
-> For each module, repeat the same framework above.
-
-### Data structures
-
-### Definition of function prototypes
-
-### Detailed pseudo code
 
 ## gamemap module
 
@@ -235,7 +196,8 @@ res[totalLength - 1] = '\0' // last row ended by '\0' instead of '\n'
 
 ### Definition of function prototypes
 ```c
-player_t* player_new(char ID, GameMap_t* map, char** grid, int gold, char* name, int row, int col, addr_t playerAddress);
+player_t* player_new(char ID, GameMap_t* map, char** grid, int gold,
+                     char* name, int row, int col, addr_t playerAddress);
 void player_delete(player_t* player);
 int getPlayerRow(player_t* player);
 int getPlayerCol(player_t* player);
