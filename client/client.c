@@ -299,6 +299,7 @@ setPlayerName(const int argc, char* argv[])
  * Calculates the map size (area), returns maximum possible map size (for memory safety), if calculation
  * obtains zero
  */
+#ifdef MINISERVER_TEST
 static int
 getMapSize() 
 {
@@ -306,7 +307,7 @@ getMapSize()
     mapsize = (mapsize == 0) ? MAXIMUM_MAP_SIZE : mapsize;
     return mapsize;
 }
-
+#endif
 /*
  * Runs a series of commands to stress test the client's message receive functionality (its primary tasks).
  * 
