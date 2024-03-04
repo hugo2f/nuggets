@@ -875,6 +875,12 @@ void cleanUpGame();
     free the gameMap
     free the game
     
+## Testing plan
+
+1. We will test the server as a systems test. We can utilize the miniclient initially to test sending and receiving messages.
+2. When the actual client is up and running, we will use that client. 
+3. Use print statements in server to check whether or not the message the client receives is the same
+
 ## Client
 
 ### Data structures
@@ -1353,12 +1359,6 @@ static void unitTest();
         return true
     else:
         return false
-
-## Testing plan
-
-1. We will test the server as a systems test. We can utilize the miniclient initially to test sending and receiving messages.
-2. When the actual client is up and running, we will use that client. 
-3. Use print statements in server to check whether or not the message the client receives is the same
 
 ### Unit testing
 
