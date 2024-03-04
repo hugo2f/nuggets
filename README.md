@@ -16,6 +16,7 @@ See the [maps](maps/README.md) for some draft maps.
 
 ## Notes
 
-For extra credit, we implemented:
-1. Gold stealing: when player A walks into player B, A will steal some gold from B.
-2. Sight range: players can only see cells that are up to `sightRadius = 5` cells away in either direction.
+For extra credit, we...
+1. Implemented gold stealing: when player A walks into player B, A will steal some gold from B.
+2. Implemented sight range: players can only see cells that are up to `sightRadius = 5` cells away in either direction.
+3. Followed the scrum method of project management
