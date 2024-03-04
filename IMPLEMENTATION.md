@@ -11,7 +11,7 @@ We avoid repeating information that is provided in the requirements spec.
 ## Plan for division of labor
 
 * Joe - Client
-* Hugo - Game Map
+* Hugo - GameMap
 * Jaysen & Colin - Server & Player
 
 ---
