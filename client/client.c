@@ -52,6 +52,9 @@ main(int argc, char* argv[])
     // shut down message module
     message_done();
 
+    // free client.playerName which we allocated via the set name function
+    free(client.playerName);
+
     // return error code corresponding to message loop exit status
     return messageLoopExitStatus ? EXIT_SUCCESS : 1;
 }
@@ -94,10 +97,10 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
         setPlayerName(argc, argv);
     }
 
+    unitTest(*serverp);
+    
     // send start message to kick off communication with the server 
     send_start(serverp);
-
-    unitTest(*serverp);
 }
 
 /*
@@ -231,8 +234,10 @@ handleMessage(void* arg, const addr_t from, const char* message)
     return false; // continue message loop 
 }
 
+#include <stdlib.h> // for malloc and free
+
 /*
- * Sets playerName in clientData structure ensuring corrent length
+ * Sets playerName in clientData structure ensuring correct length
  */
 static void
 setPlayerName(const int argc, char* argv[]) 
@@ -269,9 +274,19 @@ setPlayerName(const int argc, char* argv[])
         }
     }
 
-    // sets player name
-    client.playerName = name;
+    // Null-terminate the string
+    name[MAXIMUM_NAME_LENGTH - 1] = '\0';
+
+    // Allocate memory for client.playerName and copy name into it
+    client.playerName = malloc(strlen(name) + 1);
+    if (client.playerName == NULL) {
+        fprintf(stderr, "Memory allocation failed");
+        return;
+    }
+    strcpy(client.playerName, name);
 }
+
+
 
 /*
  * Calculates the map size (area), returns maximum possible map size (for memory safety), if calculation

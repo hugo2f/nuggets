@@ -337,6 +337,7 @@ handle_quit(char* explanation)
     end_curses();
     printf("%s\n", explanation);
     fflush(stdout);
+    free(client.playerName); // free client.playerName which we allocated via the set name function
     exit(EXIT_SUCCESS);
 }
 
