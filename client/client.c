@@ -25,7 +25,11 @@ static void parseArgs(int argc, char* argv[], addr_t* serverp);
 static bool respondToInput(void* server);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 static void setPlayerName(const int argc, char* argv[]);
+
+#ifdef MINISERVER_TEST
 static int getMapSize();
+#endif
+
 void unitTest(const addr_t from);
 
 // global constants; see .h for more details.
