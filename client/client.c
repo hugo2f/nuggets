@@ -274,15 +274,16 @@ setPlayerName(const int argc, char* argv[])
         }
     }
 
-    // Null-terminate the string
+    // null-terminate the string
     name[MAXIMUM_NAME_LENGTH] = '\0';
 
-    // Allocate memory for client.playerName and copy name into it
+    // allocate memory for client.playerName and copy name into it
     client.playerName = malloc(strlen(name) + 1);
     if (client.playerName == NULL) {
         fprintf(stderr, "Memory allocation failed");
         return;
     }
+    
     strcpy(client.playerName, name);
 }
 
