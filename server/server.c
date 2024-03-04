@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <strings.h>
 #include <time.h>
+#include <unistd.h>
+
 #include "../support/message.h"
 #include "../gamemap/gamemap.h"
 #include "player/player.h"
@@ -45,7 +47,6 @@ void initializeGame();
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 void updateSpectatorDisplay();
 void removeSpectator();
-bool spectatorActive();
 void distributeGold();
 void sendStartingGold(player_t* player);
 void collectGold(player_t* player);
@@ -68,6 +69,22 @@ void cleanUpGame();
 int 
 main(int argc, char* argv[])
 { 
+  // check arguments
+  const char* program = argv[0];
+  char* mapFile = NULL;
+  if (argc == 2) { // argv[1] is the map
+    mapFile = argv[1];
+    srand(getpid());
+  } else if (argc == 3) { // argv[2] is the seed
+    mapFile = argv[1];
+    int randSeed;
+    sscanf(argv[2], "%d", &randSeed);
+    srand(randSeed);
+  } else {
+    fprintf(stderr, "usage: %s mapFile [seed]\n", program);
+    return 3; // bad commandline
+  }
+
   // initialize the message module (without logging)
   int myPort = message_init(NULL);
   if (myPort == 0) {
@@ -76,14 +93,7 @@ main(int argc, char* argv[])
     printf("serverPort=%d\n", myPort);
   }
 
-  // check arguments (there should be none)
-  const char* program = argv[0];
-  if (argc != 1) {
-    fprintf(stderr, "usage: %s\n", program);
-    return 3; // bad commandline
-  }
-
-  initializeGame();
+  initializeGame(mapFile);
 
   // Loop, waiting for input or for messages; provide callback functions.
   // We use the 'arg' parameter to carry a pointer to 'server'.
@@ -99,14 +109,18 @@ main(int argc, char* argv[])
  * Initialize the main elements of the game 
  */
 void 
-initializeGame() 
+initializeGame(char* mapFile) 
 {
+  if (mapFile == NULL) {
+    fprintf(stderr, "mapFile is NULL");
+    exit(3); // bad commandline
+  }
   game = malloc(sizeof(game_t));
   if (game == NULL) {
     fprintf(stderr, "Error allocating memory for game\n");
     return;
   }
-  game->map = loadMapFile("../maps/main.txt");
+  game->map = loadMapFile(mapFile);
   if (game->map == NULL) {
     fprintf(stderr, "Error loading map\n");
     return;
@@ -315,8 +329,6 @@ removeSpectator()
  */
 void distributeGold() 
 {
-  srand(time(NULL)); //seed the random number generator
-
   //generate random number of gold piles
   game->numGoldPiles = GoldMinNumPiles + rand() % (GoldMaxNumPiles - GoldMinNumPiles + 1);
   game->goldPiles = malloc(game->numGoldPiles * sizeof(goldPile_t*));
@@ -654,7 +666,6 @@ playerJoin(addr_t address, char* name)
     char id = 'A' + game->currentNumPlayers;
 
     //spawn the player 
-    srand(time(NULL)); //seed the random number generator
     int** roomCells = getRoomCells(game->map);
     // get number of room cells
     int numRoomCells = 0;
@@ -662,7 +673,6 @@ playerJoin(addr_t address, char* name)
       numRoomCells++;
     }
 
-    srand(time(NULL)); //seed random number generator
     int randomCell = rand() % numRoomCells;
 
     //get row and col for index the player is spawned at 
