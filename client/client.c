@@ -249,7 +249,7 @@ setPlayerName(const int argc, char* argv[])
     }
 
     // create name character array
-    char name[MAXIMUM_NAME_LENGTH];
+    char name[MAXIMUM_NAME_LENGTH + 1];
     
     // ensure that there is nothing in memory name included in array
     name[0] = '\0';
@@ -275,7 +275,7 @@ setPlayerName(const int argc, char* argv[])
     }
 
     // Null-terminate the string
-    name[MAXIMUM_NAME_LENGTH - 1] = '\0';
+    name[MAXIMUM_NAME_LENGTH] = '\0';
 
     // Allocate memory for client.playerName and copy name into it
     client.playerName = malloc(strlen(name) + 1);
