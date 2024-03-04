@@ -242,10 +242,10 @@ handle_stolen(char* stealData)
         errors++;
     }
     
-    // extract stolenPlayerSymbol, stealerPlayerSymbol, and amountStolen from stealData
+    // extract stolenPlayerSymbol, stealerPlayerSymbol, amountStolen, playerGold, and goldRemaining from stealData
     char stolenPlayerSymbol, stealerPlayerSymbol;
-    int amountStolen;
-    if (sscanf(stealData, " %c %c %d", &stolenPlayerSymbol, &stealerPlayerSymbol, &amountStolen) != 3) {
+    int amountStolen, playerGold, goldRemaining;
+    if (sscanf(stealData, " %c %c %d %d %d", &stolenPlayerSymbol, &stealerPlayerSymbol, &amountStolen, &playerGold, &goldRemaining) != 5) {
         fprintf(stderr, "STOLEN message bad data\n");
         return;
     }
@@ -274,11 +274,21 @@ handle_stolen(char* stealData)
         errors++;
     }
 
+    //ensure playerGold is valid
+    if (!validate_gold_count(playerGold, client.maximumGold)) {
+        fprintf(stderr, "Invalid 'playerGold' amount\n");
+    }
+
+    //ensure goldRemaining is valid
+    if (!validate_gold_count(goldRemaining, client.maximumGold)) {
+        fprintf(stderr, "Invalid 'goldRemaining' amount\n");
+    }
+
     // cease execution if error occurred
     if (errors > 0) {
         return;
     }
-
+    display_player_banner(client.playerSymbol, playerGold, goldRemaining);
     // display different indication message according to if...
     if (client.playerName != NULL) {
         // someone stole from you or
@@ -295,6 +305,7 @@ handle_stolen(char* stealData)
         indicate_nuggets_stolen_spectator(stolenPlayerSymbol, stealerPlayerSymbol, amountStolen);
     }
 }
+
 
 /*
  * Runs upon receiving message from server with the DISPLAY header; see .h for more details.
