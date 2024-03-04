@@ -1337,9 +1337,25 @@ static void unitTest();
 
 The Client's main operations are tested via the unitTest function in the Client driver. The tester can compile the Client in unit test mode. This essentially creates a client.c test executable as opposed to a client.c release-ready playable executable. The unitTest function reads a long list of malformed messages into the handleMessage function, which either errors or delegates responsiblity for responding to the various handlers. The unitTest function prints each malformed command with the logged error message next to it. Therefore, we are able to test if the client is robust with respect to the various ways in which the server may send it invalid data. We decided to use preporcessor definitions in the client.c program, instead of creating an individual  test program, to control for the way in which the client sets up the global variables and parses the arguments. Otherwise, we would need to redundantly replicate all this code in the individual test file. 
 
+The cases we tested included the following among others:
+1. malformed message headers
+2. messages with numbers that are too large
+3. messages sent in the wrong order
+4. messages missing data 
+5. messages with too much data
+6. messages with missing dilineators
+
 #### Client Manual System (against miniserver)
 
 We tested ALL the client functionality against the miniserver, including sending, graphics, receiving, and validating data. To test with the miniserver, we needed to call a sendReceipt function between receiving the next initialization command. We do not compile this in the release executable either, again by setting a preprocessor directive for testing mode. 
+
+The cases we tested included the following among others:
+1. everything in the list above under (unit testing)
+3. DISPLAY commands with maps that are way too large
+4. checking that the graphics module responds appropriately when the terminal size is too large for the grid 
+5. High volumes of nonsense data
+
+^^^ We did many if not all of these tests under Valgrind as well ^^^
 
 #### gamemap
 1. Try to load nonexistent map files
