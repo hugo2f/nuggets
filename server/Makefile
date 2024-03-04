@@ -18,7 +18,9 @@ VALGRIND = valgrind --leak-check=full --show-leak-kinds=all
 
 .PHONY: all test clean
 
-all: server
+all: server 
+		make -C player
+
 
 server: $(OBJS)
 	$(CC) $(CFLAGS) $^ $(LLIBS) $(LIBS) -o $@
