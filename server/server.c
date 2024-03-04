@@ -234,28 +234,84 @@ void callCommand(player_t* player, char key)
       atGold = moveDownRight(player, game->players, game->goldRemaining);
       break;
     case 'H':
-      while(moveLeft(player, game->players, game->goldRemaining) != 3);
+      while(true) {
+        atGold = moveLeft(player, game->players, game->goldRemaining);
+        if (atGold == 1) {
+          collectGold(player);
+        } else if (atGold == 3) {
+          break;
+        }
+      }
       break;
     case 'L':
-      while(moveRight(player, game->players, game->goldRemaining) != 3);
+      while(true) {
+        atGold = moveRight(player, game->players, game->goldRemaining);
+        if (atGold == 1) {
+          collectGold(player);
+        } else if (atGold == 3) {
+          break;
+        }
+      }
      break;
     case 'J':
-      while(moveDown(player, game->players, game->goldRemaining) != 3);
+      while(true) {
+        atGold = moveDown(player, game->players, game->goldRemaining);
+        if (atGold == 1) {
+          collectGold(player);
+        } else if (atGold == 3) {
+          break;
+        }
+      }
       break;
     case 'K':
-      while(moveUp(player, game->players, game->goldRemaining) != 3);
+      while(true) {
+        atGold = moveUp(player, game->players, game->goldRemaining);
+        if (atGold == 1) {
+          collectGold(player);
+        } else if (atGold == 3) {
+          break;
+        }
+      }
       break;
     case 'Y':
-      while(moveUpLeft(player, game->players, game->goldRemaining) != 3);
+      while(true) {
+        atGold = moveUpLeft(player, game->players, game->goldRemaining);
+        if (atGold == 1) {
+          collectGold(player);
+        } else if (atGold == 3) {
+          break;
+        }
+      }
       break;
     case 'U':
-      while(moveUpRight(player, game->players, game->goldRemaining) != 3)
+      while(true) {
+        atGold = moveUpRight(player, game->players, game->goldRemaining);
+        if (atGold == 1) {
+          collectGold(player);
+        } else if (atGold == 3) {
+          break;
+        }
+      }
       break;
     case 'B':
-      while(moveDownLeft(player, game->players, game->goldRemaining) != 3);
+      while(true) {
+        atGold = moveDownLeft(player, game->players, game->goldRemaining);
+        if (atGold == 1) {
+          collectGold(player);
+        } else if (atGold == 3) {
+          break;
+        }
+      }
       break;
     case 'N':
-      while(moveDownRight(player, game->players, game->goldRemaining) != 3);
+      while(true) {
+        atGold = moveDownRight(player, game->players, game->goldRemaining);
+        if (atGold == 1) {
+          collectGold(player);
+        } else if (atGold == 3) {
+          break;
+        }
+      }
       break;    
     default: 
       printf("not a valid command\n");
