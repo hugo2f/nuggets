@@ -1,80 +1,84 @@
+/*
+ * Description: contains the main control flow for the client, defining the global data, receiving 
+ * input from the user and messages from the server, delegating the responses to various command 
+ * handlers and message senders (organized as such in seperate modules), as well as running tests if it 
+ * is in test mode. 
+ * 
+ * Author: Joseph Hirsh
+ * Date: March 1st, 2024
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <ncurses.h>
 #include "message.h"
 #include "graphics.h"
+#include "senders.h"
+#include "handlers.h"
+#include "validators.h"
+#include "clientdata.h"
 
-enum ClientState {
-    CLIENT_PRE_INIT,
-    CLIENT_START_SENT,
-    CLIENT_OKAY_RECEIVED,
-    CLIENT_GRID_RECEIVED,
-    CLIENT_PLAY
-};
-
-typedef struct {
-    char* playerName;
-    char playerSymbol;
-    int nrows;
-    int ncols;
-    int state;
-} ClientData;
-
+// function prototypes
 static void parseArgs(int argc, char* argv[], addr_t* serverp);
-static void setPlayerName(char* name);
-static bool handleInput(void* server);
-static void handleClientTypeSpecificInput(addr_t* serverp, const char validInputs[]);
+static bool respondToInput(void* server);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
-static void sendReceipt(addr_t* serverp);
-static bool sendStart(addr_t* serverp);
-static void sendPlay(addr_t* serverp);
-static void sendSpectate(addr_t* serverp);
-static void sendKey(addr_t* serverp, char message);
-static void handleOkay(char* symbol);
-static void handleGrid(char* coordinates);
-static void handleGold(char* counts);
-static void handleDisplay(char* map);
-static void handleQuit(char* explanation);
-static void handleError(char* error);
-static void indicateInvalidKey(char key);
-static void indicateNuggetsCollected(int collected);
-static bool validateGoldData(int collected, int current, int remaining);
-static int getMapSize(); 
+static void setPlayerName(const int argc, char* argv[]);
+static int getMapSize();
+void unitTest(const addr_t from);
 
-ClientData client = {NULL, '\0', 0, 0, CLIENT_PRE_INIT};
-
-const int MAXIMUM_NAME_LENGTH;
+// global constants; see .h for more details.
+const int MAXIMUM_NAME_LENGTH = 50;
 const int MAXIMUM_GOLD = 1000;
-const int MAXIMUM_MAP_SIZE = 1000;
+const int MAXIMUM_MAP_SIZE = 2500;
+const int FOREGROUND_COLOR = 7;
+const int BACKGROUND_COLOR = 0;
+const char* PLAYER_KEYSTROKES = "qQhHlLjJkKyYuUnNbB";
+const char* SPECTATOR_KEYSTROKES = "qQ";
+
+// project-wide global client struct; see .h for more details.
+ClientData client = {NULL, '\0', 0, 0, 0, 0, MAXIMUM_GOLD, PRE_INIT};
 
 int 
 main(int argc, char* argv[]) 
-{
+{    
     addr_t server;
-    parseArgs(argc, argv, &server);
+    parseArgs(argc, argv, &server); // sets up server and sets player name
 
-    bool messageLoopExitStatus = message_loop(&server, 0, NULL, handleInput, handleMessage);
+    // uses message module to start a communicaation loop with the server
+    bool messageLoopExitStatus = message_loop(&server, 0, NULL, respondToInput, handleMessage);
 
+    // shut down message module
     message_done();
+
+    // free client.playerName which we allocated via the set name function
+    free(client.playerName);
+
+    // return error code corresponding to message loop exit status
     return messageLoopExitStatus ? EXIT_SUCCESS : 1;
 }
 
+/*
+ * Use IP adress and port to attempt server setup and set player name. 
+ */
 void 
 parseArgs(int argc, char* argv[], addr_t* serverp) 
-{
+{    
+    // verifies correct number of arguments 
     const char* program = argv[0];
-    if (argc != 3 && argc != 4) {
+    if (argc < 3) {
         fprintf(stderr, "Usage: %s hostname port [player name]\n", program);
         exit(2);
     }
 
+    // attempts initialize message module, errors and exits if it cannot
     if (message_init(NULL) == 0) {
         fprintf(stderr, "Could not initialize message module\n");
         exit(3);
     }
 
+    // attempts to construct server adress, errors and exits if it cannot
     const char* serverHost = argv[1];
     const char* serverPort = argv[2];
     if (!message_setAddr(serverHost, serverPort, serverp)) {
@@ -82,306 +86,266 @@ parseArgs(int argc, char* argv[], addr_t* serverp)
         exit(4);
     }
 
+    // verifies server adress is valid, errors and exits if not
     if (serverp == NULL || !message_isAddr(*serverp)) {
         fprintf(stderr, "Invalid server address\n");
         exit(5);
     }
 
-    if (argc == 4) {
-        setPlayerName(argv[3]);
+    // if there is a fourth argument, use it to set player name
+    if (argc > 3) {
+        setPlayerName(argc, argv);
     }
 
-    sendStart(serverp);
+    unitTest(*serverp);
+    
+    // send start message to kick off communication with the server 
+    send_start(serverp);
 }
 
-static void
-setPlayerName(char* name) 
-{
-    if (client.playerName != NULL) {
-        fprintf(stderr, "You cannot reset player name");
-        return;
-    }
-
-    if (strlen(name) > MAXIMUM_NAME_LENGTH) {
-        name[MAXIMUM_NAME_LENGTH] = '\0';
-    }
-
-    client.playerName = name;
-}
-
+/*
+ * Responds to user input (keystrokes)
+ */
 static bool 
-handleInput(void* server) 
+respondToInput(void* server) 
 {    
+    // only respond to user input when a game is in session
+    if (client.state != PLAY) {
+        return false;
+    }
+    
+    // ensure server adress is valid (this should very rarely be an issue, given that we check this in 
+    // parseArgs as well)
     addr_t* serverp = server;
     if (serverp == NULL || !message_isAddr(*serverp)) {
         fprintf(stderr, "Invalid server address\n");
         return true;
     }
 
-    if (client.playerName == NULL) {
-        handleClientTypeSpecificInput(serverp, "q");
-    } else {
-        handleClientTypeSpecificInput(serverp, "qhljkyunb");
+    // define valid inputs depending on cllient mode (whether it is a Spectator or Player)
+    const char* functionalInputs = (client.playerName == NULL) ? SPECTATOR_KEYSTROKES : PLAYER_KEYSTROKES;
+
+    // get keystroke
+    int input = get_character();
+
+    // validate keystroke as not EOF
+    if (!validate_stdin_character(input)) {
+        send_key(serverp, 'q');
+        return false; // continue message loop (we stop when we receive QUIT, not by our own volition)
+    }
+    
+    // if keystroke does something, send it to server, else indicate that it is invalid
+    if (strchr(functionalInputs, input) != NULL) {
+        send_key(serverp, input);
+        remove_indicator(); // removes any indicator present on banner line
+    } else if (client.playerName != NULL) {
+        indicate_invalid_key(input);
     }
 
-    return false;
+    return false; // continue message loop 
 }
 
-static void 
-handleClientTypeSpecificInput(addr_t* serverp, const char validInputs[]) 
-{
-    int input = getch();
-    if (strchr(validInputs, input) != NULL) {
-        sendKey(serverp, input);
-    } else {
-        indicateInvalidKey(input);
-    }
-}
-
+/*
+ * Responds to server messages
+ */
 static bool 
 handleMessage(void* arg, const addr_t from, const char* message) 
 {
+    // check if message is NULL, if so, error and continue
     if (message == NULL) {
         fprintf(stderr, "Obtained NULL message");
-        sendReceipt(&from); // REMOVE LATER
-        return false;
-    }
-
-    char messageType[10];
-    char remainder[100];
-    if (sscanf(message, "%9s %99[^\n]", messageType, remainder) != 2) {
-        fprintf(stderr, "Received message with invalid format\n");
-        sendReceipt(&from); // REMOVE LATER
-        return false;
-    }
-
-    if (strcmp(messageType, "OK") == 0) {
-        handleOkay(remainder);
-    } else if (strcmp(messageType, "GRID") == 0) {
-        handleGrid(remainder);
-    } else if (strcmp(messageType, "GOLD") == 0) {
-        handleGold(remainder);
-    } else if (strcmp(messageType, "QUIT") == 0) {
-        handleQuit(remainder);
-    } else if (strcmp(messageType, "ERROR") == 0) {
-        handleError(remainder);
-    } else if (strcmp(messageType, "DISPLAY") == 0) {
-        int mapsize = getMapSize();
-        
-        char map[mapsize];
-        if (sscanf(message, "%*s %99[^\n]", map) != 1) {
-            fprintf(stderr, "Failed to retrieve map from DISPLAY message\n");
-            sendReceipt(&from); // REMOVE LATER
-            return false;
-        }
-
-        handleDisplay(map);  
-    } else {
-        fprintf(stderr, "%s is an invalid message header\n", messageType);
+        send_receipt((addr_t *)&from); // sends receipt message (only to miniserver - see function definition)
+        return false; // continue message loop 
     }
     
-    sendReceipt(&from); // REMOVE LATER
-    return false;
-}
-
-static void
-sendReceipt(addr_t* serverp) 
-{
-    #ifdef MINICLIENT_TEST
-	if (client.state != CLIENT_PLAY && client.state != CLIENT_PRE_INIT) {
-        message_send(*serverp, "RECEIVED");
-    }
-	#else
-	;
-	#endif
-}
-
-static bool 
-sendStart(addr_t* serverp) 
-{
-    if (client.state != CLIENT_PRE_INIT) {
-        fprintf(stderr, "Sent START again\n");
-        return true;
+    // extract the message header (the first word) and everything else
+    char messageHeader[25];
+    char remainder[100];
+    if (sscanf(message, "%24s %99[^\n]", messageHeader, remainder) != 2) {
+        fprintf(stderr, "Received message with invalid format\n");
+        send_receipt((addr_t *)&from);
+        return false; // continue message loop 
     }
 
-    if (client.playerName == NULL) {
-        sendSpectate(serverp);
+    // depending on the message header, call the corresponding function and pass in remainder
+    if (strcmp(messageHeader, "OK") == 0) {
+        handle_okay(remainder);
+    } else if (strcmp(messageHeader, "GRID") == 0) {
+        handle_grid(remainder);
+    } else if (strcmp(messageHeader, "GOLD") == 0) {
+        handle_player_gold(remainder);
+    } else if (strcmp(messageHeader, "QUIT") == 0) {
+        // we handle the quit parsing seperately as the "remaining" equivelent requires much more memory
+        char* skip = "QUIT ";
+        char* found;
+
+        // if 'skip' is found within 'message'
+        found = strstr(message, skip);
+        if (found != NULL) {
+            // set 'quit' pointer to the position in 'message' right after the 'skip' substring
+            char* quit = found + strlen(skip);
+            handle_quit(quit);
+        } else {
+            fprintf(stderr, "Malformed QUIT message\n");
+        }
+    } else if (strcmp(messageHeader, "ERROR") == 0) {
+        handle_error(remainder);
+    } else if (strcmp(messageHeader, "SPECTATOR_GOLD") == 0) {
+        handle_spectator_gold(remainder);
+    } else if (strcmp(messageHeader, "DISPLAY") == 0) {
+        // we handle the display parsing seperately as the "remaining" equivelent requires much more memory
+        #ifdef MINISERVER_TEST
+        int mapsize = getMapSize(); // get map size
+
+        // get format string that limits command length (to avoid stack smashing), error and continue upon failure
+        char format[mapsize];
+        if (snprintf(format, mapsize, "DISPLAY%%%d[^\n]", mapsize - 1) < 0) {
+            fprintf(stderr, "Failed to create map format string\n");
+            send_receipt((addr_t *)&from);
+            return false; // continue message loop 
+        }
+        
+        // extract map from message, error and continue upon failure 
+        char map[mapsize];
+        if (sscanf(message, format, map) != 1) {
+            fprintf(stderr, "Failed to retrieve map from DISPLAY message\n");
+            send_receipt((addr_t *)&from);
+            return false; // continue message loop 
+        }
+
+        handle_display(map);
+        #else
+        char* skip = "DISPLAY\n"; // notice that the header here is formatted slightly different
+        char* found;
+
+        // if 'skip' is found within 'message'
+        found = strstr(message, skip);
+        if (found != NULL) {
+            // set 'map' pointer to the position in 'message' right after the 'skip' substring
+            char* map = found + strlen(skip);
+            handle_display(map);
+        } else {
+            fprintf(stderr, "Malformed DISPLAY message\n");
+        }
+        #endif
+    } else if (strcmp(messageHeader, "GOLD_REMAINING") == 0) {
+        handle_gold_remaining(remainder);
+    } else if (strcmp(messageHeader, "STOLEN") == 0) {
+        handle_stolen(remainder);
     } else {
-        sendPlay(serverp);
+        fprintf(stderr, "%s is an invalid message header\n", messageHeader); // bad message header
     }
-
-    client.state = CLIENT_START_SENT;
-    return false;
+    
+    send_receipt((addr_t *)&from);
+    return false; // continue message loop 
 }
 
-static void 
-sendPlay(addr_t* serverp) 
-{
-    char message[MAXIMUM_NAME_LENGTH + 5];
-    sprintf(message, "PLAY %s", client.playerName);
-    message_send(*serverp, message);
-}
+#include <stdlib.h> // for malloc and free
 
-static void 
-sendSpectate(addr_t* serverp) 
-{
-    message_send(*serverp, "SPECTATE");
-}
-
-static void 
-sendKey(addr_t* serverp, char key) 
-{
-    if (client.state != CLIENT_PLAY) {
-        return;
-    }
-
-    char message[10]; // USE CONSTANT INSTEAD
-    sprintf(message, "KEY %c", key);
-    message_send(*serverp, message);
-
-    remove_from_banner();
-}
-
-static void 
-handleOkay(char* symbol) 
-{
-    if (client.state != CLIENT_START_SENT) {
-        fprintf(stderr, "Received OK prior to sending START\n");
-        return;
-    }
-
-    client.playerSymbol = *symbol;
-
-    client.state = CLIENT_OKAY_RECEIVED;
-}
-
-static void 
-handleGrid(char* coordinates) 
-{
-    if (client.state != CLIENT_OKAY_RECEIVED) {
-        fprintf(stderr, "Received GRID prior to receiving OK\n");
-        return;
-    }
-
-    int nrows, ncols;
-    if (sscanf(coordinates, "%d %d", &nrows, &ncols) != 2) {
-        fprintf(stderr, "GRID message missing data\n");
-        return;
-    }
-
-    if (!init_curses(nrows, ncols)) {
-        printf("You must enlarge the window to at least %d %d!\n", nrows, ncols);
-        fflush(stdout);
-    }
-
-    while (!init_curses(nrows, ncols));
-
-    client.nrows = nrows;
-    client.ncols = ncols;
-
-    display_banner(client.playerSymbol, 0, 0);
-
-    client.state = CLIENT_GRID_RECEIVED;
-}
-
-static void 
-handleGold(char* counts) 
-{
-    if (client.state != CLIENT_PLAY) {
-        fprintf(stderr, "Received GOLD prior to game start\n");
-        return;
-    }
-
-    int collected, current, remaining;
-    if (sscanf(counts, "%d %d %d", &collected, &current, &remaining) != 3) {
-        fprintf(stderr, "GOLD message missing data\n");
-        return;
-    }
-
-    if (validateGoldData(collected, current, remaining)) {
-        display_banner(client.playerSymbol, current, remaining);
-        indicateNuggetsCollected(collected);
-    }
-}
-
-static void 
-handleDisplay(char* map) 
-{
-    if (client.state != CLIENT_GRID_RECEIVED && client.state != CLIENT_PLAY) {
-        fprintf(stderr, "Received DISPLAY prior to receiving GRID\n");
-        return;
-    }
-
-    display_map(map);
-
-    if (client.state != CLIENT_PLAY) {
-        client.state = CLIENT_PLAY;
-    }
-}
-
-static void 
-handleQuit(char* explanation) 
-{
-    end_curses();
-    printf("QUIT %s\n", explanation);
-    fflush(stdout);
-    exit(EXIT_SUCCESS);
-}
-
-static void 
-handleError(char* error) 
-{
-    fprintf(stderr, "ERROR %s\n", error);
-}
-
-static void 
-indicateInvalidKey(char key) 
-{
-    if (client.state != CLIENT_PLAY) {
-        return;
-    }
-
-    char message[20]; // USE CONSTANT INSTEAD
-    sprintf(message, "Invalid keystroke %c", key);
-
-    remove_from_banner();
-    append_to_banner(message);
-}
-
+/*
+ * Sets playerName in clientData structure ensuring correct length
+ */
 static void
-indicateNuggetsCollected(int collected) 
+setPlayerName(const int argc, char* argv[]) 
 {
-    char message[100]; // USE CONSTANT INSTEAD
-    sprintf(message, "You collected %d nuggets!", collected);
+    // ensures we are not setting a player name we already set 
+    if (client.playerName != NULL) {
+        fprintf(stderr, "You cannot reset player name");
+        return;
+    }
 
-    append_to_banner(message);
+    // create name character array
+    char name[MAXIMUM_NAME_LENGTH + 1];
+    
+    // ensure that there is nothing in memory name included in array
+    name[0] = '\0';
+
+    int currentNameSize = 0; // will keep track of how full the buffer is
+    
+    // iterate through each argument
+    for (int i = 3; i < argc; i++) {
+        char* argument = argv[i]; // get argument
+        int argumentLength = strlen(argument); // get argument size
+
+        // if adding the argument and a space will not exceed the buffer, add it and a space
+        if (currentNameSize + argumentLength + 1 < MAXIMUM_NAME_LENGTH) {
+            strncat(name, argument, MAXIMUM_NAME_LENGTH - currentNameSize - 1);
+            strncat(name, " ", MAXIMUM_NAME_LENGTH - currentNameSize - 1);
+            currentNameSize = currentNameSize + argumentLength + 1;
+        } 
+        // otherwise, add however much is possible and break
+        else {
+            strncat(name, argv[i], MAXIMUM_NAME_LENGTH - currentNameSize);
+            break;
+        }
+    }
+
+    // null-terminate the string
+    name[MAXIMUM_NAME_LENGTH] = '\0';
+
+    // allocate memory for client.playerName and copy name into it
+    client.playerName = malloc(strlen(name) + 1);
+    if (client.playerName == NULL) {
+        fprintf(stderr, "Memory allocation failed");
+        return;
+    }
+    
+    strcpy(client.playerName, name);
 }
 
-static bool
-validateGoldData(int collected, int current, int remaining)
-{
-    if (collected < 0 || collected > MAXIMUM_GOLD) {
-        fprintf(stderr, "Received invalid GOLD collected value\n");
-        return false;
-    }
 
-    if (current < 0 || current > MAXIMUM_GOLD) {
-        fprintf(stderr, "Received invalid current GOLD value\n");
-        return false;
-    }
 
-    if (remaining < 0 || remaining > MAXIMUM_GOLD) {
-        fprintf(stderr, "Received invalid remaining GOLD value\n");
-        return false;
-    }
-
-    return true;
-}
-
+/*
+ * Calculates the map size (area), returns maximum possible map size (for memory safety), if calculation
+ * obtains zero
+ */
 static int
 getMapSize() 
 {
-    int mapsize = client.ncols * client.nrows;
+    int mapsize = client.ncolsMap * client.nrowsMap;
     mapsize = (mapsize == 0) ? MAXIMUM_MAP_SIZE : mapsize;
     return mapsize;
+}
+
+/*
+ * Runs a series of commands to stress test the client's message receive functionality (its primary tasks).
+ * 
+ * Note that this is not a comprehensive test of the message receive, but it verifies that the cleint is 
+ * robust with respect to the most frequent ways in which it might receive malformed messages. 
+ */
+void
+unitTest(const addr_t from)
+{
+    #ifdef UNIT_TEST // if we are in test mode
+    fprintf(stderr, "Running test build"); // indicate that we are in test mode on log
+
+    char command[500]; // adjust the size as needed according to testcommands.txt content
+
+    // open the file
+    FILE* testCommandsFile = fopen("testcommands.txt", "r");
+    
+    // ensure file opened successfully
+    if (testCommandsFile == NULL) {
+        fprintf(stderr, "Error opening testcommands.txt file, continuing to normal execution\n");
+        return;
+    }
+
+    // read each line in the file
+    while (fgets(command, sizeof(command), testCommandsFile)) {
+        printf("\nSERVER COMMAND\n%s\nCLIENT OUTPUT\n", command);
+        fflush(stdout);
+        handleMessage(NULL, from, command);
+        printf("\n");
+        fflush(stdout);
+    }
+
+    // close the file
+    fclose(testCommandsFile);
+
+    // indicate tests over
+    printf("TESTING COMPLETE\n");
+    exit(0);
+    #else
+    fprintf(stderr, "Running release build"); // indicate that we are in release mode on log
+    #endif
 }

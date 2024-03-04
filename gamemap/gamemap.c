@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #include "file.h"
 
@@ -24,7 +25,19 @@ typedef struct GameMap {
 static const int dr[] = {0, 1, 0, -1};
 static const int dc[] = {1, 0, -1, 0};
 
-/* Local functions */
+// players can only see up to sightRadius units away, with diagonals
+// counting as 1 unit (such that a visible cell is at most
+// sightRadius cells away in either direction)
+static const int sightRadius = 5;
+
+// Helper functions
+void deleteGrid(char** grid, int numRows);
+void delete2DIntArr(int** arr, int numRows);
+int checkSquare(GameMap_t* map, int** visibleRegion, int idx,
+                int row, int col, int radius);
+static bool isVisible(GameMap_t* map, int r1, int c1, int r2, int c2);
+static bool outOfMap(GameMap_t* map, int row, int col);
+bool isWall(char type);
 
 // Getters
 int getNumRows(GameMap_t* map)
@@ -59,14 +72,44 @@ char** getGameGrid(GameMap_t* map)
   return map->gameGrid;
 }
 
-// Helper functions
-void deleteGrid(char** grid, int numRows);
-void delete2DIntArr(int** arr, int numRows);
-int checkSquare(GameMap_t* map, int** visibleRegion, int idx,
-                int row, int col, int radius);
-static bool isVisible(GameMap_t* map, int r1, int c1, int r2, int c2);
-static bool outOfMap(GameMap_t* map, int row, int col);
-static bool isWall(char type);
+char getCellType(GameMap_t* map, int row, int col)
+{
+  if (outOfMap(map, row, col)) {
+    return '\0';
+  }
+  return map->gameGrid[row][col];
+}
+
+char getCellTerrain(GameMap_t* map, int row, int col)
+{
+  if (outOfMap(map, row, col)) {
+    return '\0';
+  }
+  return map->grid[row][col];
+}
+
+void setCellType(GameMap_t* map, char type, int row, int col)
+{
+  // invalid coordinates
+  if (outOfMap(map, row, col)) {
+    return;
+  }
+
+  // can't change a wall or solid rock to another type
+  char curType = map->grid[row][col];
+  if (isWall(type) || curType == ' ') {
+    return;
+  }
+  map->gameGrid[row][col] = type;
+}
+
+void restoreCell(GameMap_t* map, int row, int col)
+{
+  if (outOfMap(map, row, col)) {
+    return;
+  }
+  map->gameGrid[row][col] = map->grid[row][col];
+}
 
 GameMap_t* loadMapFile(char* mapFilePath)
 {
@@ -150,37 +193,6 @@ void deleteGrid(char** grid, int numRows)
   free(grid);
 }
 
-char getCellType(GameMap_t* map, int row, int col)
-{
-  if (outOfMap(map, row, col)) {
-    return '\0';
-  }
-  return map->grid[row][col];
-}
-
-void setCellType(GameMap_t* map, char type, int row, int col)
-{
-  // invalid coordinates
-  if (outOfMap(map, row, col)) {
-    return;
-  }
-
-  // can't change a wall or solid rock to another type
-  char curType = map->grid[row][col];
-  if (isWall(type) || curType == ' ') {
-    return;
-  }
-  map->gameGrid[row][col] = type;
-}
-
-void restoreCell(GameMap_t* map, int row, int col)
-{
-  if (outOfMap(map, row, col)) {
-    return;
-  }
-  map->gameGrid[row][col] = map->grid[row][col];
-}
-
 int** getVisibleRegion(GameMap_t* map, int row, int col)
 {
   // parameter checks
@@ -189,7 +201,7 @@ int** getVisibleRegion(GameMap_t* map, int row, int col)
   }
   // a player would can only be in a room ('.') or passage cell ('#')
   char type = getCellType(map, row, col);
-  if (type != '.' && type != '#') {
+  if (type != '.' && type != '#' && !isalpha(type)) {
     return NULL;
   }
 
@@ -202,18 +214,10 @@ int** getVisibleRegion(GameMap_t* map, int row, int col)
     return NULL;
   }
 
-  // TODO: delete after testing
-  // // the player is always on visible spot
-  // visibleRegion[0] = malloc(2 * sizeof(int));
-  // if (visibleRegion[0] == NULL) {
-  //   return NULL;
-  // }
-  // visibleRegion[0][0] = row;
-  // visibleRegion[0][1] = col;
   int idx = 0; // start filling in later visible cells from 1
   int found = 1; // visible cells found in the previous checkSquare call
   // expand radius to check until no new visible cells are found
-  for (int radius = 1; found > 0; radius++) {
+  for (int radius = 1; radius <= sightRadius && found > 0; radius++) {
     // check square around (row, col) of `radius`
     found = checkSquare(map, visibleRegion, idx, row, col, radius);
     // checkSquare returns -1 on memory allocation error
@@ -258,15 +262,12 @@ int checkSquare(GameMap_t* map, int** visibleRegion, int idx,
   int curIdx = idx;
   int curRow = row - radius, curCol = col - radius;
   int length = 2 * radius + 1;
-  // printf("idx: %d, row: %d, col: %d, curRow: %d, curCol: %d, radius: %d\n",
-  //        idx, row, col, curRow, curCol, radius);
   // go right, down, left, up, length - 1 steps each, to traverse the square
   // using `dr` and `dc`
   for (int d = 0; d < 4; d++) {
     for (int step = 0; step < length - 1; step++) {
       curRow += dr[d];
       curCol += dc[d];
-      // printf("checking isVisible: %d, %d, %d, %d\n", row, col, curRow, curCol);
       if (isVisible(map, row, col, curRow, curCol)) {
         visibleRegion[curIdx] = malloc(2 * sizeof(int));
         if (visibleRegion[curIdx] == NULL) {
@@ -278,7 +279,6 @@ int checkSquare(GameMap_t* map, int** visibleRegion, int idx,
     }
   }
   return curIdx - idx;
-
 }
 
 /*
@@ -303,8 +303,6 @@ bool isVisible(GameMap_t* map, int r1, int c1, int r2, int c2)
     return false;
   }
 
-  // TODO: delete prints after system testing
-  // printf("start: %d, %d, end: %d, %d\n", r1, c1, r2, c2);
   int rowDiff = r2 - r1, colDiff = c2 - c1;
   int minRow, maxRow;
   if (r1 < r2) {
@@ -314,20 +312,18 @@ bool isVisible(GameMap_t* map, int r1, int c1, int r2, int c2)
     minRow = r2;
     maxRow = r1;
   }
-  // printf("intermediate rows\n");
+
   // for each intermediate row
   for (int row = minRow + 1; row < maxRow; row++) {
     // line between start and target cell intersects exactly on a col
     if (((row - r1) * colDiff) % rowDiff == 0) {
       int col = (row - r1) * colDiff / rowDiff + c1;
-      // printf("exactly: %d, %d\n", row, col);
       if (map->grid[row][col] != '.') {
         return false;
       }
     } else { // line is between two columns
       // get col when the ray reaches `row`
       double col = (double) (row - r1) * colDiff / rowDiff + c1;
-      // printf("not exactly: %d, %f\n", row, col);
       int colLeft = (int) col;
       if (map->grid[row][colLeft] != '.' && map->grid[row][colLeft + 1] != '.') {
         return false;
@@ -343,25 +339,22 @@ bool isVisible(GameMap_t* map, int r1, int c1, int r2, int c2)
     minCol = c2;
     maxCol = c1;
   }
-  // printf("intermediate columns\n");
+
   // intermediate columns
   for (int col = minCol + 1; col < maxCol; col++) {
     if (((col - c1) * rowDiff) % colDiff == 0) {
       int row = (col - c1) * rowDiff / colDiff + r1;
-      // printf("exactly: %d, %d\n", row, col);
       if (map->grid[row][col] != '.') {
         return false;
       }
     } else {
       double row = (double) (col - c1) * rowDiff / colDiff + r1;
-      // printf("not exactly: %f, %d\n", row, col);
       int rowUp = (int) row;
       if (map->grid[rowUp][col] != '.' && map->grid[rowUp + 1][col] != '.') {
         return false;
       }
     }
   }
-  // printf("can see: %d, %d\n", r2, c2);
   return true;
 }
 
@@ -384,7 +377,7 @@ int** getRoomCells(GameMap_t* map)
   // loop through the room
   for (int row = 0; row < map->numRows; row++) {
     for (int col = 0; col < map->numCols; col++) {
-      if (map->grid[row][col] == '.') {
+      if (map->gameGrid[row][col] == '.') {
         // each row has two ints for (row, col)
         res[idx] = malloc(2 * sizeof(int));
         if (res[idx] == NULL) {
@@ -458,5 +451,5 @@ bool outOfMap(GameMap_t* map, int row, int col)
 
 bool isWall(char type)
 {
-  return (type == '+' || type == '-' || type == '|');
+  return (type == '|' || type == '-' || type == '+' || type == ' ');
 }
