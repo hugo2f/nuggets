@@ -199,27 +199,29 @@ res[totalLength - 1] = '\0' // last row ended by '\0' instead of '\n'
 player_t* player_new(char ID, GameMap_t* map, char** grid, int gold,
                      char* name, int row, int col, addr_t playerAddress);
 void player_delete(player_t* player);
-int getPlayerRow(player_t* player);
-int getPlayerCol(player_t* player);
-char** getPlayerMap(player_t* player);
+player_t* getPlayerByID(player_t** players, char ID);
 char* getPlayerName(player_t* player);
 int getPlayerGold(player_t* player);
+char** getPlayerMap(player_t* player);
+int getPlayerRow(player_t* player);
+int getPlayerCol(player_t* player);
 addr_t getPlayerAddress(player_t* player);
-player_t* getPlayerByID(player_t** players, char ID);
+bool getPlayerActive(player_t* player);
+char* getStealMessage(player_t*player);
+void setPlayerInactive(player_t* player);
+void updateGoldDisplay(player_t* player, int pileAmount, int goldRemaining);
 void addGold(player_t* player, int amount);
-void stealGold(player_t* player1, player_t* player2);
+void stealGold(player_t* player1, player_t* player2, int goldRemaining);
 void updatePlayerPosition(player_t* player);
 char getCharacterID(player_t* player);
-bool player_isActive(player_t* player);
-void player_inActive(player_t* player);
-int moveDownRight(player_t* player, player_t** players);
-int moveDownLeft(player_t* player, player_t** players);
-int moveUpRight(player_t* player, player_t** players);
-int moveUpLeft(player_t* player, player_t** players);
-int moveUp(player_t* player, player_t** players);
-int moveDown(player_t* player, player_t** players);
-int moveLeft(player_t* player, player_t** players);
-int moveRight(player_t* player, player_t** players);
+int moveDownRight(player_t* player, player_t** players, int goldRemaining);
+int moveDownLeft(player_t* player, player_t** players, int goldRemaining);
+int moveUpRight(player_t* player, player_t** players, int goldRemaining);
+int moveDownRight(player_t* player, player_t** players, int goldRemaining);
+int moveUp(player_t* player, player_t** players, int goldRemaining);
+int moveDown(player_t* player, player_t** players, int goldRemaining);
+int moveLeft(player_t* player, player_t** players, int goldRemaining);
+int moveRight(player_t* player, player_t** players, int goldRemaining);
 ```
 ### Detailed pseudo code
 
@@ -257,6 +259,12 @@ int moveRight(player_t* player, player_t** players);
     finds index in the array by subracting 'A' from the char given
     convert index to int
     return the ID at the index in the given array
+
+#### getStealMessage
+    returns the steal message for a player (server sends this to client)
+
+#### updateGoldDisplay
+    sends a message to the client to update it's banner to reflect changes in gold
 
 #### addGold
     adds the given amount of gold to the player given
@@ -305,12 +313,11 @@ int moveRight(player_t* player, player_t** players);
 #### getCharacterID
     return given player's ID variable
 
-#### player_isActive
+#### getPlayerActive
     returns the boolean variable _active_ for the given player
-    
 
-#### player_inActive
-    player->active = given boolean value
+#### setPlayerInactive
+    player->active = false
 
 #### moveDownRight
     flag = 0
@@ -326,6 +333,7 @@ int moveRight(player_t* player, player_t** players);
           swap players rows and columns
           set maps to reflect the players' new coordinates
           player1 stealGold from player 2
+          flag = 2;
         else if updated position is gold
           set the position to player
           restore old cell
@@ -334,7 +342,7 @@ int moveRight(player_t* player, player_t** players);
           flag = 1
       updatePlayerPosition(player);
       return flag;
-    return 2;
+    return 3;
     
 #### moveDownLeft
     flag = 0
@@ -350,6 +358,7 @@ int moveRight(player_t* player, player_t** players);
           swap players rows and columns
           set maps to reflect the players' new coordinates
           player1 stealGold from player 2
+          flag = 2
         else if updated position is gold
           set the position to player
           restore old cell
@@ -358,7 +367,7 @@ int moveRight(player_t* player, player_t** players);
           flag = 1
       updatePlayerPosition(player);
       return flag;
-    return 2;
+    return 3;
     
 #### moveUpRight
     flag = 0
@@ -374,6 +383,7 @@ int moveRight(player_t* player, player_t** players);
           swap players rows and columns
           set maps to reflect the players' new coordinates
           player1 stealGold from player 2
+          flag = 2;
         else if updated position is gold
           set the position to player
           restore old cell
@@ -382,7 +392,7 @@ int moveRight(player_t* player, player_t** players);
           flag = 1
       updatePlayerPosition(player);
       return flag;
-    return 2;
+    return 3;
 
 #### moveUpLeft
     flag = 0
@@ -398,6 +408,7 @@ int moveRight(player_t* player, player_t** players);
           swap players rows and columns
           set maps to reflect the players' new coordinates
           player1 stealGold from player 2
+          flag = 2;
         else if updated position is gold
           set the position to player
           restore old cell
@@ -406,7 +417,7 @@ int moveRight(player_t* player, player_t** players);
           flag = 1
       updatePlayerPosition(player);
       return flag;
-    return 2;
+    return 3;
 
 #### moveUp
     flag = 0
@@ -421,6 +432,7 @@ int moveRight(player_t* player, player_t** players);
           swap players rows and columns
           set maps to reflect the players' new coordinates
           player1 stealGold from player 2
+          flag = 2;
         else if updated position is gold
           set the position to player
           restore old cell
@@ -428,7 +440,7 @@ int moveRight(player_t* player, player_t** players);
           flag = 1
       updatePlayerPosition(player);
       return flag;
-    return 2;
+    return 3;
     
 #### moveDown
     flag = 0
@@ -443,6 +455,7 @@ int moveRight(player_t* player, player_t** players);
           swap players rows and columns
           set maps to reflect the players' new coordinates
           player1 stealGold from player 2
+          flag = 2;
         else if updated position is gold
           set the position to player
           restore old cell
@@ -450,7 +463,7 @@ int moveRight(player_t* player, player_t** players);
           flag = 1
       updatePlayerPosition(player);
       return flag;
-    return 2;
+    return 3;
 
 #### moveLeft
     flag = 0
@@ -465,6 +478,7 @@ int moveRight(player_t* player, player_t** players);
           swap players rows and columns
           set maps to reflect the players' new coordinates
           player1 stealGold from player 2
+          flag = 2;
         else if updated position is gold
           set the position to player
           restore old cell
@@ -472,7 +486,7 @@ int moveRight(player_t* player, player_t** players);
           flag = 1
       updatePlayerPosition(player);
       return flag;
-    return 2;
+    return 3;
 
 #### moveRight
     flag = 0
@@ -487,6 +501,7 @@ int moveRight(player_t* player, player_t** players);
           swap players rows and columns
           set maps to reflect the players' new coordinates
           player1 stealGold from player 2
+          flag = 2'
         else if updated position is gold
           set the position to player
           restore old cell
@@ -494,7 +509,7 @@ int moveRight(player_t* player, player_t** players);
           flag = 1
       updatePlayerPosition(player);
       return flag;
-    return 2;
+    return 3;
 
 ## Server
 
@@ -507,18 +522,25 @@ int moveRight(player_t* player, player_t** players);
 void initializeGame();
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 void updateSpectatorDisplay();
+void removeSpectator();
 bool spectatorActive();
 void distributeGold();
+void sendStartingGold(player_t* player);
 void collectGold(player_t* player);
+void sendGoldUpdate(player_t* player, int pileAmount);
 void spawnGold(int rol, int col);
 void spawnPlayer(player_t* player, int row, int col);
 void callCommand(player_t* player, char key);
 void sendGrid(player_t* player, bool isSpectator);
 void sendDisplay(player_t* player, bool isSpectator);
 char** initializePlayerMap(int row, int col);
+void updateCurrentPlayerVision();
 player_t* spectatorJoin(addr_t address, char* name);
 player_t* playerJoin(addr_t address, char* name);
 player_t* checkPlayerJoined(addr_t address);
+void playerQuit(player_t* player);
+void spectatorQuit(player_t* spectator);
+void sendGameSummary();
 void cleanUpGame();
 ```
 
@@ -575,6 +597,11 @@ void cleanUpGame();
     if spectator is active:
       sendDisplay to the spectator
 
+#### updateCurrentPlayerVision
+    loop through players in game
+    if player is active
+    send display update
+
 #### spectatorActive
     spectator = game->players[MaxPlayers-1]
     if spectator == NULL:
@@ -616,6 +643,9 @@ void cleanUpGame();
       goldPile_t* goldPile = game->goldPiles[index]
       goldPile->amount++
     free all malloc'd memory
+
+#### sendStartingGold
+    sends a message to the client with the starting amount of gold
     
 #### collectGold
     row = getPlayerRow(player)
@@ -654,63 +684,75 @@ void cleanUpGame();
     send display to the player
 
 #### callCommand
-    bool atGold = false
-    switch (key):
+    int atGold = 0;
+    switch (key) {
       case 'Q':
-        exit(1)
+        if sent by spectator
+          spectatorQuit
+        else
+          playerQuit
+        break;
       case 'h':
-        atGold = moveLeft(player, game->players)
-        break
+        atGold = moveLeft(player, game->players, game->goldRemaining);    
+        break;
       case 'l':
-        atGold = moveRight(player, game->players)
-        break
+        atGold = moveRight(player, game->players, game->goldRemaining);
+        break;
       case 'j':
-        printf("command for moving down\n");
-        atGold = moveDown(player, game->players)
-        break
+        atGold = moveDown(player, game->players, game->goldRemaining);
+        break;
       case 'k':
-        printf("command for moving up\n");
-        atGold = moveUp(player, game->players)
-        break
+        atGold = moveUp(player, game->players, game->goldRemaining);
+        break;
       case 'y':
-        atGold = moveUpLeft(player, game->players)
-        break
+        atGold = moveUpLeft(player, game->players, game->goldRemaining);
+        break;
       case 'u':
-        atGold = moveUpRight(player, game->players)
-        break
+        atGold = moveUpRight(player, game->players, game->goldRemaining);
+        break;
       case 'b':
-        atGold = moveDownLeft(player, game->players)
-        break
+        atGold = moveDownLeft(player, game->players, game->goldRemaining);
+        break;
       case 'n':
-        atGold = moveDownRight(player, game->players)
-        break
+        atGold = moveDownRight(player, game->players, game->goldRemaining);
+        break;
       case 'H':
-        while(moveLeft(player, game->players) != 2)
-        break
+        while(moveLeft(player, game->players, game->goldRemaining) != 3);
+        break;
       case 'L':
-        while(moveRight(player, game->players) != 2)
-        break
+        while(moveRight(player, game->players, game->goldRemaining) != 3);
+      break;
       case 'J':
-        while(moveDown(player, game->players) != 2)
-        break
+        while(moveDown(player, game->players, game->goldRemaining) != 3);
+        break;
       case 'K':
-        while(moveUp(player, game->players) != 2)
-        break
+        while(moveUp(player, game->players, game->goldRemaining) != 3);
+        break;
       case 'Y':
-        break
+        while(moveUpLeft(player, game->players, game->goldRemaining) != 3);
+        break;
       case 'U':
-        break
+        while(moveUpRight(player, game->players, game->goldRemaining) != 3)
+        break;
       case 'B':
-        break
+        while(moveDownLeft(player, game->players, game->goldRemaining) != 3);
+        break;
       case 'N':
-        break    
+        while(moveDownRight(player, game->players, game->goldRemaining) != 3);
+        break;    
       default: 
-        printf("not a valid command\n")
-        break
-    if atGold:
+        printf("not a valid command\n");
+        break;
+    }
+    if atGold = 1
       collectGold(player)
-    sendDisplay(player, false) 
-    updateSpectatorDisplay()
+    if atGold = 2
+      send stealMessage to player
+      if spectator is active
+        send stealMessage to spectator
+  if key not 'Q'
+    update all player vision
+    update spectator display
 
 #### sendGrid
     malloc memory for sizeMessage
@@ -727,7 +769,7 @@ void cleanUpGame();
     free mallocs
 
 #### sendDisplay
-    if isSpectator == false):
+    if isSpectator == false:
       update player's position
     numRows, numCols = get rows and cols from map
     address = player's address
@@ -760,6 +802,13 @@ void cleanUpGame();
       size++
     delete visibleRegion
     return grid
+
+#### sendGoldUpdate
+    loop through players
+    if active
+      check player who called this function
+        send player who called this function gold update with pile amount
+      send all other players remaining gold to update their banner
 
 #### spectatorJoin
     if (game->spectatorJoined):
@@ -800,6 +849,20 @@ void cleanUpGame();
         return player 
     return NULL
 
+#### playerQuit 
+    changes player's ID on gameGrid back to terrain
+    sets player's active status to false 
+    update active player's vision to reflect this change
+    send QUIT message to player
+
+#### spectatorQuit
+    set spectator active status to false 
+    send QUIT message to spectator
+    delete the specatator
+
+#### sendGameSummary
+    sends a formatted summary of all players and their gold totals when game is over (all gold collected)
+
 #### cleanUpGame
     for each current player:
       delete the player
@@ -809,7 +872,7 @@ void cleanUpGame();
 
     free the players
     free the gold piles
-    free the map
+    free the gameMap
     free the game
     
 ## Client Module
@@ -896,6 +959,10 @@ static int getMapSize();
     return the mapsize 
 
 ## Testing plan
+
+1. We will test the server as a systems test. We can utilize the miniclient initially to test sending and receiving messages.
+2. When the actual client is up and running, we will use that client. 
+3. Use print statements in server to check whether or not the message the client receives is the same
 
 ### Unit testing
 
