@@ -25,7 +25,11 @@ static void parseArgs(int argc, char* argv[], addr_t* serverp);
 static bool respondToInput(void* server);
 static bool handleMessage(void* arg, const addr_t from, const char* message);
 static void setPlayerName(const int argc, char* argv[]);
+
+#ifdef MINISERVER_TEST
 static int getMapSize();
+#endif
+
 void unitTest(const addr_t from);
 
 // global constants; see .h for more details.
@@ -318,7 +322,7 @@ void
 unitTest(const addr_t from)
 {
     #ifdef UNIT_TEST // if we are in test mode
-    fprintf(stderr, "Running test build"); // indicate that we are in test mode on log
+    fprintf(stderr, "Running test build\n"); // indicate that we are in test mode on log
 
     char command[500]; // adjust the size as needed according to testcommands.txt content
 
@@ -347,6 +351,6 @@ unitTest(const addr_t from)
     printf("TESTING COMPLETE\n");
     exit(0);
     #else
-    fprintf(stderr, "Running release build"); // indicate that we are in release mode on log
+    fprintf(stderr, "Running release build\n"); // indicate that we are in release mode on log
     #endif
 }

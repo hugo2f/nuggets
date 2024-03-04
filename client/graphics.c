@@ -282,7 +282,8 @@ setupScreenSize(int nrows, int ncols)
 
     // If the expected size is larger than the actual terminal window size, print a message
     if (nrows > nrowsScreen || ncols > ncolsScreen) {
-        printf("Expand window to %d rows by %d columns\n", nrows, ncols); // prompts user to expand window
+        printf("Expand window to %d rows by %d columns (current: %d x %d)\n",
+               nrows, ncols, nrowsScreen, ncolsScreen); // prompts user to expand window
         fflush(stdout); // flush the output buffer
     }
 
