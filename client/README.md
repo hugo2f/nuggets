@@ -10,8 +10,9 @@
 
 ## Assumptions:
 
-- The server and the client share a mutually-understood communication protocol.
-- The client.c file can be compiled in two modes, one for the main release, the other for testing (see `IMPLEMENTATION.md` under "Testing Plan")
+1. The server and the client share a mutually-understood communication protocol.
+2. The client.c file can be compiled in two modes, one for the main release, the other for testing (see `IMPLEMENTATION.md` under "Testing Plan")
+3. There are memory issues with curses we do not bother adressing
 
 ---
 

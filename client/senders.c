@@ -95,7 +95,6 @@ sendPlay(addr_t* serverp)
     
     // check to make sure playerName is not too large
     int playerNameLength = strlen(client.playerName);
-    printf("> %s >", client.playerName); fflush(stdout);
     if (playerNameLength > MAXIMUM_NAME_LENGTH) {
         fprintf(stderr, "Player name '%s' is too long", client.playerName);
         return;
